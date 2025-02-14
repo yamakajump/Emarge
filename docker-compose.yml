@@ -1,0 +1,7 @@
+services:
+  selenium:
+    build: ./
+    container_name: Emarge_Selenium
+    shm_size: 2g
+    volumes:
+      - ./app:/app
