@@ -6,4 +6,4 @@ COPY app/* .
 
 RUN sudo pip install --no-cache-dir -r requirements.txt --break-system-packages
 
-CMD ["sudo", "python3", "script.py"]
+CMD ["sudo", "--preserve-env=Curl,Aurl,Us,Pa,St", "bash", "-c", "python3 -u script.py"]

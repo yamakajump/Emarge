@@ -1,7 +1,13 @@
 services:
   selenium:
     build: ./
-    container_name: Emarge_Selenium
+    container_name: Emarge
     shm_size: 2g
     volumes:
-      - ./app:/app
+      - ./app/:/app/
+    environment:
+      - Curl=10731
+      - Aurl=433339
+      - Us=USER
+      - Pa=PASS
+      - St=Présent #Absent #Excusé

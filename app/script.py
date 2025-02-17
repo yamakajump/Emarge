@@ -5,19 +5,34 @@ from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import NoSuchElementException
 import time
-from dotenv import load_dotenv
 import os
 import logging
 import stat
+import time
+import pytz
+import schedule
+import datetime
+import random
 
-load_dotenv()
-USERNAME = os.getenv("MoodleUs", "USER")
-PASSWORD = os.getenv("MoodlePa", "PASS")
-SHADOW = os.getenv("MoodleSh", "False").lower() == "true"
-STATUT = os.getenv("MoodleSt")
-COURSE_URL = os.getenv("MoodleCourseUrl")
-ATTENDANCE_URL = os.getenv("MoodleAttendanceUrl")
-path = os.path.dirname(__file__)
+# Set the timezone and allowed days
+PARIS_TZ = pytz.timezone("Europe/Paris")
+ALLOWED_DAYS = {0, 1, 2, 3, 4}
+
+# Set color for better printing
+GREEN = "\033[32m"
+RED = "\033[31m"
+BLUE = "\033[34m"
+RESET = "\033[0m"
+
+# Set variable with env from docker-compose
+USERNAME = os.getenv("Us")
+PASSWORD = os.getenv("Pa")
+if USERNAME == 'USER' or PASSWORD == 'PASS':
+    print(f"[{RED}-{RESET}] Vous devez d'abord définir vos identifiants dans le docker-compose.yml")
+    quit()
+STATUT = os.getenv("St")
+COURSE_URL = "https://moodle.univ-ubs.fr/course/view.php?id=" + os.getenv("Curl")
+ATTENDANCE_URL = "https://moodle.univ-ubs.fr/mod/attendance/view.php?id=" + os.getenv("Aurl")
 
 logging.basicConfig(
     filename='emargement.log',
@@ -26,88 +41,110 @@ logging.basicConfig(
     filemode='a'
 )
 
-def ensure_executable(filepath):
-    if not os.access(filepath, os.X_OK):
-        logging.info(f"Rendant {filepath} exécutable.")
-        os.chmod(filepath, os.stat(filepath).st_mode | stat.S_IEXEC)
-
-logging.info("Ouverture du navigateur Selenium.")
-
+# Set options for selenium
 options = Options()
-if SHADOW:
-    options.add_argument('-headless')
+options.add_argument('-headless')
 
-if ":\\" in os.getcwd():
-    service = Service(executable_path=f".{path}/geckodriver")
-elif "darwin" in os.uname().sysname.lower():
-    mac_driver = f"{path}/geckodriver_MAC"
-    ensure_executable(mac_driver)
-    service = Service(executable_path=mac_driver)
-else:
-    service = Service(executable_path=f"{path}/geckodriver")
+service = Service(executable_path=f"geckodriver")
 
-driver = webdriver.Firefox(options=options, service=service)
+def emarge():
+    """Perform all the process like a normal student to emerge"""
+    driver = webdriver.Firefox(options=options, service=service)
 
-driver.get("https://moodle.univ-ubs.fr/")
-time.sleep(0.5)
+    logging.info("Ouverture du navigateur Selenium")
+    print(f"[{BLUE}+{RESET}] Ouverture du navigateur Selenium")
 
-select_element = driver.find_element(By.ID, "idp")
-dropdown = Select(select_element)
-dropdown.select_by_visible_text("Université Bretagne Sud - UBS")
+    driver.get("https://moodle.univ-ubs.fr/")
+    time.sleep(0.5)
 
-select_button = driver.find_element(By.XPATH, "//button[@type='submit' and contains(@class, 'btn-primary')]")
-select_button.click()
-time.sleep(1)
+    # Select UBS on the mir
+    select_element = driver.find_element(By.ID, "idp")
+    dropdown = Select(select_element)
+    dropdown.select_by_visible_text("Université Bretagne Sud - UBS")
+    select_button = driver.find_element(By.XPATH, "//button[@type='submit' and contains(@class, 'btn-primary')]")
+    select_button.click()
+    time.sleep(1)
 
-username_input = driver.find_element(By.ID, "username")
-username_input.send_keys(USERNAME)
+    # Enter USERNAME / PASSWORD and submit them
+    username_input = driver.find_element(By.ID, "username")
+    username_input.send_keys(USERNAME)
+    password_input = driver.find_element(By.ID, "password")
+    password_input.send_keys(PASSWORD)
+    login_button = driver.find_element(By.XPATH, "//button[@type='submit' and contains(@class, 'btn-primary')]")
+    login_button.click()
 
-password_input = driver.find_element(By.ID, "password")
-password_input.send_keys(PASSWORD)
+    # Check if the mir accepted our credentials
+    try:
+        driver.find_element(By.ID, "loginErrorsPanel")
+        print(f"[{RED}-{RESET}] Mauvais identifiant ou mot de passe")
+        logging.warning("Mauvais identifiant ou mot de passe")
+        driver.quit()
+        quit()
+    except NoSuchElementException:
+        logging.info("Connection réussi")
+        print(f"[{GREEN}*{RESET}] Connection réussi")
+    time.sleep(2)
 
-login_button = driver.find_element(By.XPATH, "//button[@type='submit' and contains(@class, 'btn-primary')]")
-login_button.click()
+    # Go to the right URL to emerge
+    driver.get(COURSE_URL)
+    time.sleep(1)
+    driver.get(ATTENDANCE_URL)
+    time.sleep(1)
 
-try:
-    error_message = driver.find_element(By.ID, "loginErrorsPanel")
-    print("[-] Mauvais Identifiant ou Mot de passe")
-    logging.warning("Mauvais Identifiant ou Mot de passe")
-    if USERNAME == 'USER':
-        print("[-] Créez le fichier .env pour y stocker vos identifiants (https://github.com/MTlyx/Emargement_UBS)")
-    driver.quit()
-    quit()
-except NoSuchElementException:
-    logging.info("Connection réussi")
-    print("[*] Connection réussi")
+    # Check if the button to emerge is here, if yes, we send the status we put on the docker-compose
+    try:
+        link_element = driver.find_element(By.XPATH, "//a[contains(text(), 'Envoyer le statut de présence')]")
+        link_href = link_element.get_attribute("href")
+        driver.get(link_href)
+        time.sleep(2)
 
-time.sleep(1)
+        present_radio_button = driver.find_element(By.XPATH, f"//input[@type='radio' and @name='status'][following-sibling::span[text()='{STATUT}']]")
+        present_radio_button.click()
 
-driver.get(COURSE_URL)
-time.sleep(0.5)
+        save_button = driver.find_element(By.XPATH, "//input[@type='submit' and @id='id_submitbutton']")
+        save_button.click()
 
-driver.get(ATTENDANCE_URL)
-time.sleep(0.5)
+        logging.info("Emargement réussi")
+        print(f"[{GREEN}*{RESET}] Emargement réussi")
 
-try:
-    link_element = driver.find_element(By.XPATH, "//a[contains(text(), 'Envoyer le statut de présence')]")
-    link_href = link_element.get_attribute("href")
-    driver.get(link_href)
-except NoSuchElementException:
-    logging.warning("Impossible d'envoyer le statut, statut non présent")
-    print("[*] Impossible d'envoyer le statut, statut non présent")
-    driver.quit()
-    quit()
+        time.sleep(2)
+        driver.quit()
+        print(f"[{GREEN}*{RESET}] Fermeture du navigateur Selenium")
+    except NoSuchElementException:
+        driver.quit()
+        logging.warning("Impossible d'émarger")
+        print(f"[{RED}-{RESET}] Impossible d'émarger")
 
-time.sleep(1)
+def schedule_random_times():
+    """Randomly choose when to emerge"""
+    schedule.clear()
+    now = datetime.datetime.now(PARIS_TZ)
 
-present_radio_button = driver.find_element(By.XPATH, f"//input[@type='radio' and @name='status'][following-sibling::span[text()='{STATUT}']]")
-present_radio_button.click()
+    if now.weekday() in ALLOWED_DAYS:
+        morning_time = f"08:{random.randint(10, 30):02d}"
+        afternoon_time = f"14:{random.randint(46, 59):02d}"
 
-save_button = driver.find_element(By.XPATH, "//input[@type='submit' and @id='id_submitbutton']")
-save_button.click()
+        schedule.every().day.at(morning_time).do(emarge)
+        schedule.every().day.at(afternoon_time).do(emarge)
 
-logging.info("Statut envoyé avec succès")
-print("[*] Statut envoyé avec succès")
+        logging.info(f"Emargement prévu à {morning_time} et {afternoon_time}")
+        print(f"[{BLUE}+{RESET}] Emargement prévu à {morning_time} et {afternoon_time}")
 
-time.sleep(4)
-driver.quit()
+# Emerge right away to be sure we don't miss the first one
+emarge()
+schedule_random_times()
+
+# Choose a new random times to emerge for today
+schedule.every().day.at("00:00").do(schedule_random_times)
+
+# While loop to check every minute if it's the time to emerge
+while True:
+    now = datetime.datetime.now(PARIS_TZ)
+
+    for job in schedule.get_jobs():
+        job_time = job.at_time
+        if now.time().hour == job_time.hour and now.time().minute == job_time.minute:
+            job.job_func()
+
+    schedule.run_pending()
+    time.sleep(60)
