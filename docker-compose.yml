@@ -6,8 +6,9 @@ services:
     volumes:
       - ./app/:/app/
     environment:
-      - Curl=10731
-      - Aurl=433339
+      - CourseID=10731
+      - AttendanceID=433339
       - Us=USER
       - Pa=PASS
       - St=Présent #Absent #Excusé
+

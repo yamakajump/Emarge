@@ -31,8 +31,8 @@ if USERNAME == 'USER' or PASSWORD == 'PASS':
     print(f"[{RED}-{RESET}] Vous devez d'abord définir vos identifiants dans le docker-compose.yml")
     quit()
 STATUT = os.getenv("St")
-COURSE_URL = "https://moodle.univ-ubs.fr/course/view.php?id=" + os.getenv("Curl")
-ATTENDANCE_URL = "https://moodle.univ-ubs.fr/mod/attendance/view.php?id=" + os.getenv("Aurl")
+COURSE_URL = "https://moodle.univ-ubs.fr/course/view.php?id=" + os.getenv("CourseID")
+ATTENDANCE_URL = "https://moodle.univ-ubs.fr/mod/attendance/view.php?id=" + os.getenv("AttendanceID")
 
 logging.basicConfig(
     filename='emargement.log',
