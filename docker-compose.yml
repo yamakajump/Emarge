@@ -11,4 +11,4 @@ services:
       - Us=USER
       - Pa=PASS
       - St=Présent #Absent #Excusé
-
+      - TZ=Europe/Paris
