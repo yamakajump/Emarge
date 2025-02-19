@@ -110,6 +110,7 @@ def emarge():
         time.sleep(2)
         driver.quit()
         print(f"[{GREEN}*{RESET}] Fermeture du navigateur Selenium")
+        time.sleep(50)
     except NoSuchElementException:
         driver.quit()
         logging.warning("Impossible d'émarger")
