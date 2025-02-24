@@ -1,77 +1,32 @@
-# 🎓 Automatisation de l'émargement sur Moodle pour l'Université Bretagne Sud
+# 🎓 Automatisation de l'émargement
 
-Ce projet automatise l'émargement des élèves de l'Université Bretagne Sud en utilisant Selenium. 
+Ce projet a pour but d'automatiser l'émargement des élèves de l'Université Bretagne Sud, en particulier ceux de l'ENSIBS, à l'aide de Selenium dans un conteneur docker. Chaque jours de la semaine, deux horaires aléatoires sont choisis pour émarger le matin et le soir.
 
-## Installation
+> [!CAUTION]  
+> Ce dépôt Github est à utiliser avec prudence. Si vous le mettez en place, assurez-vous d'être présent à chaque cours. 
 
-1. Clonez le dépôt :
-```bash
-git clone https://github.com/MTlyx/Emargement_UBS.git && cd Emargement_UBS
+## 📌 Installation
+
+1. Clonez le dépôt github
+
+```shell
+git clone https://github.com/MTlyx/Emarge.git && cd Emarge
 ```
 
-2. Installez les dépendances Python :
-```bash
-pip install -r requirements.txt
+2. Modifiez les variables d'environnement du fichier `docker-compose.yml`
+
+Pour les 3ᵉ années, seul l'utilisateur et le mot de passe doivent être modifiés. Pour les autres, il faudra également changer les identifiants du cours `CourseID` et de l'émargement `AttendanceID`.
+
+```shell
+- CourseID=10731
+- AttendanceID=433339
+- Us=USER
+- Pa=PASS
+- St=Présent #Absent #Excusé
 ```
 
-3. Modifiez le fichier `.env` pour y stocker vos identifiants et paramètres :
-```bash
-MoodleUs=USER
-MoodlePa=PASSWORD
+3. Lancez le conteneur docker
+
+```shell
+sudo docker-compose up -d
 ```
-
-## Lancement 
-Une fois configuré, lancez le script avec :
-```bash
-python3 Emarge.py
-```
-
-## Configuration du fichier .env
-
-### **MoodleUs** : 
-Définissez votre identifiant pour moodle
-
-### **MoodlePa** : 
-Définissez votre mot de passe pour moodle
-
-### **MoodleSh** :  
-Définissez si vous souhaitez que le navigateur s'exécute en mode invisible :  
-- `True`
-- `False`
-
-### **MoodleSt** :  
-Définissez le statut à utiliser pour l'émergement :  
-- `Présent`
-- `Absent`
-- `Excusé`
-- `Absent`
-
-### **MoodleCourseUrl** : 
-Définissez l'Url du cours sur moodle
-
-### **MoodleAttendanceUrl** : 
-Définissez l'Url de l'attendance sur moodle
-
-## ⏰ Automatisation avec Crontab
-
-Automatisation de l'émergement tous les jours de la semaine (du lundi au vendredi) le matin et le soir 
-
-1. ⚠️ Configuration ⚠️
-
-Selenium doit être configuré pour s'exécuter sans ouvrir de fenêtre de navigateur
-```bash
-MoodleSh=True
-```
-
-2. Ouvrir l'éditeur de crontab
-```bash
-crontab -e
-```
-
-3. Ajouter les lignes suivantes
-```bash
-2 8 * * 1-5 python3 /path/to/Emargement_UBS/Emarge.py
-47 14 * * 1-5 python3 /path/to/Emargement_UBS/Emarge.py
-```
-
-Les logs sont automatiquement sauvegarder dans le fichier emargement.log

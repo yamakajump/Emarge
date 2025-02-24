@@ -1,0 +1,13 @@
+services:
+  selenium:
+    build: ./
+    container_name: Emarge
+    shm_size: 2g
+    volumes:
+      - ./app/:/app/
+    environment:
+      - CourseID=10731
+      - AttendanceID=433339
+      - Us=USER
+      - Pa=PASS
+      - TZ=Europe/Paris
