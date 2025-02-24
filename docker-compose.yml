@@ -6,6 +6,9 @@ services:
     volumes:
       - ./app/:/app/
     environment:
+      - ANNEE=X
+      - SEMESTRE=X
+      - TP=X
       - CourseID=10731
       - AttendanceID=433339
       - Us=USER

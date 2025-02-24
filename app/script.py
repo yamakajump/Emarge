@@ -13,10 +13,12 @@ import pytz
 import schedule
 import datetime
 import random
+import requests
+import json
+from datetime import datetime, UTC, timedelta
 
 # Set the timezone and allowed days
 PARIS_TZ = pytz.timezone("Europe/Paris")
-ALLOWED_DAYS = {0, 1, 2, 3, 4}
 
 # Set color for better printing
 GREEN = "\033[32m"
@@ -27,11 +29,15 @@ RESET = "\033[0m"
 # Set variable with env from docker-compose
 USERNAME = os.getenv("Us")
 PASSWORD = os.getenv("Pa")
-if USERNAME == 'USER' or PASSWORD == 'PASS':
-    print(f"[{RED}-{RESET}] Vous devez d'abord définir vos identifiants dans le docker-compose.yml")
-    quit()
 COURSE_URL = "https://moodle.univ-ubs.fr/course/view.php?id=" + os.getenv("CourseID")
 ATTENDANCE_URL = "https://moodle.univ-ubs.fr/mod/attendance/view.php?id=" + os.getenv("AttendanceID")
+A = os.getenv("ANNEE")
+S = os.getenv("SEMESTRE")
+TP = os.getenv("TP")
+if USERNAME == 'USER' or PASSWORD == 'PASS' or A == "X" or S == "X" or TP == "X":
+    print(f"[{RED}-{RESET}] Vous devez d'abord définir vos identifiants dans le docker-compose.yml")
+    quit()
+URL_PLANNING = f"https://planningsup.app/api/v1/calendars?p=ensibs.cyberdefense.{A}emeannee.semestre{S}s{S}.tp{TP}"
 
 logging.basicConfig(
     filename='emargement.log',
@@ -46,12 +52,48 @@ options.add_argument('-headless')
 
 service = Service(executable_path=f"geckodriver")
 
-def emarge():
+def filter_events(events):
+    """Filter the events to only keep the ones we want to emerge"""
+    blacklists = ["Entrainement Le Robert", "Activités HACK2G2", "Activités GCC"]
+    filtered_events = []
+    for event in events:
+        if not any(blacklist in event["name"] for blacklist in blacklists):
+            filtered_events.append(event)
+    return filtered_events
+
+def hours_Emarge():
+    """From the API, get each courses and their starting hours for today"""
+    response = requests.get(URL_PLANNING)
+    try:
+        data = response.json()
+    except json.decoder.JSONDecodeError:
+        logging.error("Impossible de récupérer les données de l'API, vérifiez votre ANNEE, SEMESTRE et TP")
+        print(f"[{RED}-{RESET}] Impossible de récupérer les données de l'API, vérifiez votre ANNEE, SEMESTRE et TP")
+        quit()
+
+    today_str = datetime.now(UTC).strftime("%Y-%m-%d")
+
+    # Extract relevant fields and convert timestamps
+    events = [
+        {
+            "name": event["name"],
+            "start": datetime.fromtimestamp(event["start"] / 1000, UTC) + timedelta(hours=1),
+            "end": datetime.fromtimestamp(event["end"] / 1000, UTC) + timedelta(hours=1),
+        }
+        for planning in data.get("plannings", [])
+        for event in planning.get("events", [])
+        if (datetime.fromtimestamp(event["start"] / 1000, UTC) + timedelta(hours=1)).strftime("%Y-%m-%d") == today_str
+    ]
+
+    # Return the list of events of today
+    return events
+
+def emarge(course_name):
     """Perform all the process like a normal student to emerge"""
     driver = webdriver.Firefox(options=options, service=service)
 
-    logging.info("Ouverture du navigateur Selenium")
-    print(f"[{BLUE}+{RESET}] Ouverture du navigateur Selenium")
+    logging.info(f"Ouverture du navigateur Selenium pour {course_name}")
+    print(f"[{BLUE}+{RESET}] Ouverture du navigateur Selenium pour {course_name}")
 
     driver.get("https://moodle.univ-ubs.fr/")
     time.sleep(0.5)
@@ -104,45 +146,37 @@ def emarge():
         print(f"[{RED}-{RESET}] Impossible d'émarger")
 
     driver.quit()
-    print(f"[{GREEN}*{RESET}] Fermeture du navigateur Selenium")
-    time.sleep(50)
+    print(f"[{RED}*{RESET}] Fermeture du navigateur Selenium")
+    time.sleep(55)
 
 def schedule_random_times():
-    """Randomly choose when to emerge"""
+    """Randomly choose when to emerge for each events for today"""
     schedule.clear()
-    now = datetime.datetime.now(PARIS_TZ)
-    time = []
+    times = []
 
-    if now.weekday() in ALLOWED_DAYS:
-        time.append(f"08:{random.randint(5, 14):02d}")
-        time.append(f"09:{random.randint(50, 59):02d}")
-        time.append(f"11:{random.randint(35, 44):02d}")
-        time.append(f"13:{random.randint(5, 14):02d}")
-        time.append(f"14:{random.randint(50, 59):02d}")
-        time.append(f"16:{random.randint(35, 44):02d}")
-        time.append(f"18:{random.randint(20, 29):02d}")
+    # Check if current day is weekend (5 = Saturday, 6 = Sunday)
+    if datetime.now(PARIS_TZ).weekday() >= 5:
+        return
 
-        for item in time:
-            schedule.every().day.at(item).do(emarge)
+    # Get from the API all the courses of the student for today
+    events_today = hours_Emarge()
+    events_filtered = filter_events(events_today)
 
-        logging.info(f"Emargement prévu à {', '.join(time)}")
-        print(f"[{BLUE}+{RESET}] Emargement prévu à {', '.join(time)}")
+    for event in events_filtered:
+        start_hour = (event["start"] + timedelta(minutes=random.randint(5, 15))).strftime("%H:%M")
+        schedule.every().day.at(start_hour).do(lambda event_name=event["name"]: emarge(event_name))
+        times.append(f"{start_hour}")
 
-# Emerge right away to be sure we don't miss the first one
-emarge()
+    if times:
+        logging.info(f"Emargement prévu à {', '.join(times)}")
+        print(f"[{BLUE}+{RESET}] Emargement prévu à {', '.join(times)}")
+
 schedule_random_times()
 
-# Choose a new random times to emerge for today
+# Choose new random times to emerge for today
 schedule.every().day.at("00:00").do(schedule_random_times)
 
 # While loop to check every minute if it's the time to emerge
 while True:
-    now = datetime.datetime.now(PARIS_TZ)
-
-    for job in schedule.get_jobs():
-        job_time = job.at_time
-        if now.time().hour == job_time.hour and now.time().minute == job_time.minute:
-            job.job_func()
-
     schedule.run_pending()
     time.sleep(60)
