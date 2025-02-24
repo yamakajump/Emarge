@@ -13,6 +13,7 @@
 - Moved from static to dynamic scheduling
 - Optimized API calls by checking weekdays first
 - Removed CourseID and AttendanceID specification
+- Removed SEMESTRE specification
 
 ### Fixed
 - Resolved Selenium timing issues with additional delays

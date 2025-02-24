@@ -17,7 +17,6 @@ git clone https://github.com/MTlyx/Emarge.git && cd Emarge
 
 Les variables à modifier sont les suivantes :
 - `ANNEE` : Année d'étude (3, 4 ou 5)
-- `SEMESTRE` : Numéro du semestre (5 à 8)
 - `TP` : Numéro du groupe de TP (1 à 6)
 - `Us` : Votre identifiant UBS
 - `Pa` : Votre mot de passe UBS
@@ -25,7 +24,6 @@ Les variables à modifier sont les suivantes :
 Exemple de configuration d'un 3eme année dans le TP 1
 ```yaml
 - ANNEE=3
-- SEMESTRE=6
 - TP=1
 - Us=E123456
 - Pa=MonSuperMotDePasse
@@ -39,7 +37,7 @@ sudo docker-compose up -d
 
 ## 📊 Vérification des logs
 
-Vous pouvez vérifier les logs de deux manières :
+Vous pouvez vérifier vos logs de deux manières :
 
 1. Directement depuis Docker :
 ```bash
@@ -54,4 +52,4 @@ cat app/emargement.log
 Les logs vous permettront de voir :
 - Les horaires prévus d'émargement
 - Les succès/échecs des émargements
-- Les éventuelles erreurs de connexion
+- Les éventuelles erreurs

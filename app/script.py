@@ -30,12 +30,23 @@ RESET = "\033[0m"
 USERNAME = os.getenv("Us")
 PASSWORD = os.getenv("Pa")
 A = os.getenv("ANNEE")
-S = os.getenv("SEMESTRE")
 TP = os.getenv("TP")
-if USERNAME == 'USER' or PASSWORD == 'PASS' or A == "X" or S == "X" or TP == "X":
+if USERNAME == 'USER' or PASSWORD == 'PASS' or A == "X" or TP == "X":
     print(f"[{RED}-{RESET}] Vous devez d'abord définir vos identifiants dans le docker-compose.yml")
     quit()
-URL_PLANNING = f"https://planningsup.app/api/v1/calendars?p=ensibs.cyberdefense.{A}emeannee.semestre{S}s{S}.tp{TP}"
+if A == "3":
+    S = 5
+    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.cyberdefense.{A}emeannee.semestre{S}s{S}.tp{TP}"
+    URL_PLANNING += f",ensibs.cyberdefense.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
+elif A == "4":
+    S = 7
+    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.cyberdefense.{A}emeannee.semestre{S}s{S}.tp{TP}"
+    URL_PLANNING += f",ensibs.cyberdefense.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
+elif A == "5":
+    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.cyberdefense.{A}emeannee.tp{TP}"
+else:
+    print(f"[{RED}-{RESET}] Votre ANNEE doit être 3, 4 ou 5")
+    quit()
 
 logging.basicConfig(
     filename='emargement.log',

@@ -7,7 +7,6 @@ services:
       - ./app/:/app/
     environment:
       - ANNEE=X
-      - SEMESTRE=X
       - TP=X
       - Us=USER
       - Pa=PASS
