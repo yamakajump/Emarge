@@ -9,7 +9,7 @@ Ce projet a pour but d'automatiser l'émargement des étudiants de l'Université
 
 1. Clonez le dépôt Github
 
-```shell
+```bash
 git clone https://github.com/MTlyx/Emarge.git && cd Emarge
 ```
 
@@ -19,8 +19,6 @@ Les variables à modifier sont les suivantes :
 - `ANNEE` : Année d'étude (3, 4 ou 5)
 - `SEMESTRE` : Numéro du semestre (5 à 8)
 - `TP` : Numéro du groupe de TP (1 à 6)
-- `CourseID` : ID du cours sur Moodle
-- `AttendanceID` : ID de l'émargement sur Moodle
 - `Us` : Votre identifiant UBS
 - `Pa` : Votre mot de passe UBS
 
@@ -35,7 +33,7 @@ Exemple de configuration d'un 3eme année dans le TP 1
 
 3. Lancez le conteneur Docker
 
-```shell
+```bash
 sudo docker-compose up -d
 ```
 
@@ -44,12 +42,12 @@ sudo docker-compose up -d
 Vous pouvez vérifier les logs de deux manières :
 
 1. Directement depuis Docker :
-```shell
+```bash
 docker-compose logs -f
 ```
 
 2. En consultant le fichier de log :
-```shell
+```bash
 cat app/emargement.log
 ```
 
