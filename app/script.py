@@ -29,8 +29,6 @@ RESET = "\033[0m"
 # Set variable with env from docker-compose
 USERNAME = os.getenv("Us")
 PASSWORD = os.getenv("Pa")
-COURSE_URL = "https://moodle.univ-ubs.fr/course/view.php?id=" + os.getenv("CourseID")
-ATTENDANCE_URL = "https://moodle.univ-ubs.fr/mod/attendance/view.php?id=" + os.getenv("AttendanceID")
 A = os.getenv("ANNEE")
 S = os.getenv("SEMESTRE")
 TP = os.getenv("TP")
@@ -126,11 +124,29 @@ def emarge(course_name):
         print(f"[{GREEN}*{RESET}] Connection réussi")
     time.sleep(2)
 
-    # Go to the right URL to emerge
-    driver.get(COURSE_URL)
-    time.sleep(1)
-    driver.get(ATTENDANCE_URL)
-    time.sleep(1)
+    # Click on the first result that contains "Émargement"
+    try:
+        emargement_link = driver.find_element(By.XPATH, "//a[contains(., 'ENSIBS : Émargement')]")
+        emargement_href = emargement_link.get_attribute("href")
+        driver.get(emargement_href)
+        time.sleep(1)
+    except NoSuchElementException:
+        logging.warning("Impossible de trouver le lien d'émargement")
+        print(f"[{RED}-{RESET}] Impossible de trouver le lien d'émargement")
+        driver.quit()
+        quit()
+
+    # Click on the "Présence" link
+    try:
+        presence_link = driver.find_element(By.XPATH, "//a[contains(., 'Présence')]")
+        presence_href = presence_link.get_attribute("href")
+        driver.get(presence_href)
+        time.sleep(1)
+    except NoSuchElementException:
+        logging.warning("Impossible de trouver le lien d'attendance")
+        print(f"[{RED}-{RESET}] Impossible de trouver le lien d'attendance")
+        driver.quit()
+        quit()
 
     # Check if the button to emerge is here, if yes, we click it
     try:
@@ -139,14 +155,12 @@ def emarge(course_name):
         driver.get(link_href)
         time.sleep(2)
         logging.info("Emargement réussi")
-        print(f"[{GREEN}*{RESET}] Emargement réussi")
 
     except NoSuchElementException:
         logging.warning("Impossible d'émarger")
         print(f"[{RED}-{RESET}] Impossible d'émarger")
 
     driver.quit()
-    print(f"[{RED}*{RESET}] Fermeture du navigateur Selenium")
     time.sleep(55)
 
 def schedule_random_times():

@@ -9,8 +9,6 @@ services:
       - ANNEE=X
       - SEMESTRE=X
       - TP=X
-      - CourseID=10731
-      - AttendanceID=433339
       - Us=USER
       - Pa=PASS
       - TZ=Europe/Paris

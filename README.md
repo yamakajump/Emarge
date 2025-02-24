@@ -29,14 +29,9 @@ Exemple de configuration d'un 3eme année dans le TP 1
 - ANNEE=3
 - SEMESTRE=6
 - TP=1
-- CourseID=10731
-- AttendanceID=433339
 - Us=E123456
 - Pa=MonSuperMotDePasse
 ```
-
-> [!NOTE]
-> Les IDs de cours (`CourseID`) et d'émargement (`AttendanceID`) peuvent être trouvés dans l'URL de Moodle lorsque vous êtes sur la page du cours ou d'émargement.
 
 3. Lancez le conteneur Docker
 
