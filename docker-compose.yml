@@ -10,5 +10,4 @@ services:
       - AttendanceID=433339
       - Us=USER
       - Pa=PASS
-      - St=Présent #Absent #Excusé
       - TZ=Europe/Paris

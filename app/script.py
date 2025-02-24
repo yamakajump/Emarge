@@ -30,7 +30,6 @@ PASSWORD = os.getenv("Pa")
 if USERNAME == 'USER' or PASSWORD == 'PASS':
     print(f"[{RED}-{RESET}] Vous devez d'abord définir vos identifiants dans le docker-compose.yml")
     quit()
-STATUT = os.getenv("St")
 COURSE_URL = "https://moodle.univ-ubs.fr/course/view.php?id=" + os.getenv("CourseID")
 ATTENDANCE_URL = "https://moodle.univ-ubs.fr/mod/attendance/view.php?id=" + os.getenv("AttendanceID")
 
@@ -91,45 +90,43 @@ def emarge():
     driver.get(ATTENDANCE_URL)
     time.sleep(1)
 
-    # Check if the button to emerge is here, if yes, we send the status we put on the docker-compose
+    # Check if the button to emerge is here, if yes, we click it
     try:
         link_element = driver.find_element(By.XPATH, "//a[contains(text(), 'Envoyer le statut de présence')]")
         link_href = link_element.get_attribute("href")
         driver.get(link_href)
         time.sleep(2)
-
-        present_radio_button = driver.find_element(By.XPATH, f"//input[@type='radio' and @name='status'][following-sibling::span[text()='{STATUT}']]")
-        present_radio_button.click()
-
-        save_button = driver.find_element(By.XPATH, "//input[@type='submit' and @id='id_submitbutton']")
-        save_button.click()
-
         logging.info("Emargement réussi")
         print(f"[{GREEN}*{RESET}] Emargement réussi")
 
-        time.sleep(2)
-        driver.quit()
-        print(f"[{GREEN}*{RESET}] Fermeture du navigateur Selenium")
-        time.sleep(50)
     except NoSuchElementException:
-        driver.quit()
         logging.warning("Impossible d'émarger")
         print(f"[{RED}-{RESET}] Impossible d'émarger")
+
+    driver.quit()
+    print(f"[{GREEN}*{RESET}] Fermeture du navigateur Selenium")
+    time.sleep(50)
 
 def schedule_random_times():
     """Randomly choose when to emerge"""
     schedule.clear()
     now = datetime.datetime.now(PARIS_TZ)
+    time = []
 
     if now.weekday() in ALLOWED_DAYS:
-        morning_time = f"08:{random.randint(10, 30):02d}"
-        afternoon_time = f"14:{random.randint(46, 59):02d}"
+        time.append(f"08:{random.randint(5, 14):02d}")
+        time.append(f"09:{random.randint(50, 59):02d}")
+        time.append(f"11:{random.randint(35, 44):02d}")
+        time.append(f"13:{random.randint(5, 14):02d}")
+        time.append(f"14:{random.randint(50, 59):02d}")
+        time.append(f"16:{random.randint(35, 44):02d}")
+        time.append(f"18:{random.randint(20, 29):02d}")
 
-        schedule.every().day.at(morning_time).do(emarge)
-        schedule.every().day.at(afternoon_time).do(emarge)
+        for item in time:
+            schedule.every().day.at(item).do(emarge)
 
-        logging.info(f"Emargement prévu à {morning_time} et {afternoon_time}")
-        print(f"[{BLUE}+{RESET}] Emargement prévu à {morning_time} et {afternoon_time}")
+        logging.info(f"Emargement prévu à {', '.join(time)}")
+        print(f"[{BLUE}+{RESET}] Emargement prévu à {', '.join(time)}")
 
 # Emerge right away to be sure we don't miss the first one
 emarge()
