@@ -1,9 +1,9 @@
 # 🎓 Automatisation de l'émargement v2.1
 
-Ce projet a pour but d'automatiser l'émargement des étudiants de l'Université Bretagne Sud, en particulier ceux de l'ENSIBS. Il utilise Selenium dans un conteneur Docker pour simuler la présence aux cours. Chaque jour de la semaine (du lundi au vendredi), un horaire aléatoire est choisi entre 5 et 15 minutes après le début du cours pour émarger.
+Ce projet a pour but d'automatiser l'émargement des étudiants de l'Université Bretagne Sud, en particulier ceux de l'ENSIBS. Il utilise Selenium dans un conteneur Docker pour simuler leur présence aux cours. Chaque jour de la semaine (du lundi au vendredi), une heure aléatoire est choisie entre 5 et 15 minutes après le début du cours pour émarger.
 
 > [!CAUTION]
-> Ce dépôt Github est à utiliser avec prudence. Si vous le mettez en place, assurez-vous d'être présent à chaque cours de votre emploie du temps.
+> Ce dépôt Github est à utiliser avec prudence. Si vous le mettez en place, assurez-vous d'être présent à chaque cours de votre emploi du temps.
 
 ## 📌 Installation
 
