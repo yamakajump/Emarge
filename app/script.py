@@ -80,8 +80,7 @@ def hours_Emarge():
         print(f"[{RED}-{RESET}] Impossible de récupérer les données de l'API, vérifiez votre ANNEE, SEMESTRE et TP")
         quit()
 
-    today_str = datetime.now(UTC).strftime("%Y-%m-%d")
-
+    today_str = datetime.now(PARIS_TZ).strftime("%Y-%m-%d")
     # Extract relevant fields and convert timestamps
     events = [
         {
@@ -193,6 +192,7 @@ def schedule_random_times():
         times.append(f"{start_hour}")
 
     if times:
+        times.sort()
         logging.info(f"Emargement prévu à {', '.join(times)}")
         print(f"[{BLUE}+{RESET}] Emargement prévu à {', '.join(times)}")
 

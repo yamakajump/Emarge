@@ -14,10 +14,12 @@
 - Optimized API calls by checking weekdays first
 - Removed CourseID and AttendanceID specification
 - Removed SEMESTRE specification
+- Sort list of time to emarge
 
 ### Fixed
 - Resolved Selenium timing issues with additional delays
 - Resolved schedule timing issues
+- Corrected timezone discrepancies in schedule fetching
 
 ## [v2.0] - 2024-12-15
 
