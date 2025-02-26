@@ -31,12 +31,15 @@ USERNAME = os.getenv("Us")
 PASSWORD = os.getenv("Pa")
 FORMATION = os.getenv("FORMATION")
 A = os.getenv("ANNEE")
-TP = int(os.getenv("TP"))
+TP = os.getenv("TP")
+blacklist = os.getenv("blacklist")
 
 if USERNAME == 'USER' or PASSWORD == 'PASS' or A == "X" or TP == "X" or FORMATION == "X":
     print(f"[{RED}-{RESET}] Vous devez d'abord définir les variables d'environnements dans le docker-compose.yml")
+    time.sleep(5)
     quit()
 
+TP = int(TP)
 if not 1 <= TP <= 6:
     print(f"[{RED}-{RESET}] Votre TP doit être compris entre 1 et 6")
     quit()
@@ -59,6 +62,11 @@ else:
     print(f"[{RED}-{RESET}] Votre ANNEE doit être 3, 4 ou 5")
     quit()
 
+if blacklist:
+    blacklists = blacklist.split(", ")
+else:
+    blacklists = []
+
 logging.basicConfig(
     filename='emargement.log',
     level=logging.INFO,
@@ -74,7 +82,6 @@ service = Service(executable_path=f"geckodriver")
 
 def filter_events(events):
     """Filter the events to only keep the ones we want to emerge"""
-    blacklists = ["Entrainement Le Robert", "Activités HACK2G2", "Activités GCC"]
     filtered_events = []
     for event in events:
         if not any(blacklist in event["name"] for blacklist in blacklists):
@@ -102,6 +109,7 @@ def hours_Emarge():
         for planning in data.get("plannings", [])
         for event in planning.get("events", [])
         if (datetime.fromtimestamp(event["start"] / 1000, UTC) + timedelta(hours=1)).strftime("%Y-%m-%d") == today_str
+        and datetime.fromtimestamp(event["end"] / 1000, UTC) + timedelta(hours=1) > datetime.now(PARIS_TZ)
     ]
 
     # Return the list of events of today
@@ -198,7 +206,7 @@ def schedule_random_times():
     events_filtered = filter_events(events_today)
 
     for event in events_filtered:
-        start_hour = (event["start"] + timedelta(minutes=random.randint(10, 20))).strftime("%H:%M")
+        start_hour = (event["start"] + timedelta(minutes=random.randint(15, 25))).strftime("%H:%M")
         schedule.every().day.at(start_hour).do(lambda event_name=event["name"]: emarge(event_name))
         times.append(f"{start_hour}")
 
@@ -206,6 +214,9 @@ def schedule_random_times():
         times.sort()
         logging.info(f"Emargement prévu à {', '.join(times)}")
         print(f"[{BLUE}+{RESET}] Emargement prévu à {', '.join(times)}")
+    else:
+        logging.info("Aucun cours à venir aujourd'hui")
+        print(f"[{BLUE}+{RESET}] Aucun cours à venir aujourd'hui")
 
 schedule_random_times()
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## [v2.2] - 2025-02-26
+
+### Added
+- Blacklist used from the environment variables
+
+### Changed
+- Emerge from 15-25 min
+
+### Fixed
+- Fix emerge keep past event
+
 ## [v2.1] - 2025-02-24
 
 ### Added
