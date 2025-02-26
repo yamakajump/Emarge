@@ -29,21 +29,32 @@ RESET = "\033[0m"
 # Set variable with env from docker-compose
 USERNAME = os.getenv("Us")
 PASSWORD = os.getenv("Pa")
+FORMATION = os.getenv("FORMATION")
 A = os.getenv("ANNEE")
-TP = os.getenv("TP")
-if USERNAME == 'USER' or PASSWORD == 'PASS' or A == "X" or TP == "X":
-    print(f"[{RED}-{RESET}] Vous devez d'abord définir vos identifiants dans le docker-compose.yml")
+TP = int(os.getenv("TP"))
+
+if USERNAME == 'USER' or PASSWORD == 'PASS' or A == "X" or TP == "X" or FORMATION == "X":
+    print(f"[{RED}-{RESET}] Vous devez d'abord définir les variables d'environnements dans le docker-compose.yml")
     quit()
+
+if not 1 <= TP <= 6:
+    print(f"[{RED}-{RESET}] Votre TP doit être compris entre 1 et 6")
+    quit()
+
+if not (FORMATION == "cyberdefense" or FORMATION == "cyberdata" or FORMATION == "cyberlog"):
+    print(f"[{RED}-{RESET}] Votre FORMATION doit être cyberdefense, cyberdata ou cyberlog")
+    quit()
+
 if A == "3":
     S = 5
-    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.cyberdefense.{A}emeannee.semestre{S}s{S}.tp{TP}"
-    URL_PLANNING += f",ensibs.cyberdefense.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
+    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}"
+    URL_PLANNING += f",ensibs.{FORMATION}.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
 elif A == "4":
     S = 7
-    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.cyberdefense.{A}emeannee.semestre{S}s{S}.tp{TP}"
-    URL_PLANNING += f",ensibs.cyberdefense.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
+    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}"
+    URL_PLANNING += f",ensibs.{FORMATION}.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
 elif A == "5":
-    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.cyberdefense.{A}emeannee.tp{TP}"
+    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.{FORMATION}.{A}emeannee.tp{TP}"
 else:
     print(f"[{RED}-{RESET}] Votre ANNEE doit être 3, 4 ou 5")
     quit()
@@ -104,7 +115,7 @@ def emarge(course_name):
     print(f"[{BLUE}+{RESET}] Ouverture du navigateur Selenium pour {course_name}")
 
     driver.get("https://moodle.univ-ubs.fr/")
-    time.sleep(0.5)
+    time.sleep(3)
 
     # Select UBS on the mir
     select_element = driver.find_element(By.ID, "idp")
@@ -112,7 +123,7 @@ def emarge(course_name):
     dropdown.select_by_visible_text("Université Bretagne Sud - UBS")
     select_button = driver.find_element(By.XPATH, "//button[@type='submit' and contains(@class, 'btn-primary')]")
     select_button.click()
-    time.sleep(1)
+    time.sleep(3)
 
     # Enter USERNAME / PASSWORD and submit them
     username_input = driver.find_element(By.ID, "username")
@@ -131,15 +142,14 @@ def emarge(course_name):
         quit()
     except NoSuchElementException:
         logging.info("Connection réussi")
-        print(f"[{GREEN}*{RESET}] Connection réussi")
-    time.sleep(2)
+    time.sleep(5)
 
     # Click on the first result that contains "Émargement"
     try:
         emargement_link = driver.find_element(By.XPATH, "//a[contains(., 'ENSIBS : Émargement')]")
         emargement_href = emargement_link.get_attribute("href")
         driver.get(emargement_href)
-        time.sleep(1)
+        time.sleep(5)
     except NoSuchElementException:
         logging.warning("Impossible de trouver le lien d'émargement")
         print(f"[{RED}-{RESET}] Impossible de trouver le lien d'émargement")
@@ -151,7 +161,7 @@ def emarge(course_name):
         presence_link = driver.find_element(By.XPATH, "//a[contains(., 'Présence')]")
         presence_href = presence_link.get_attribute("href")
         driver.get(presence_href)
-        time.sleep(1)
+        time.sleep(5)
     except NoSuchElementException:
         logging.warning("Impossible de trouver le lien d'attendance")
         print(f"[{RED}-{RESET}] Impossible de trouver le lien d'attendance")
@@ -164,6 +174,7 @@ def emarge(course_name):
         link_href = link_element.get_attribute("href")
         driver.get(link_href)
         time.sleep(2)
+        print(f"[{GREEN}*{RESET}] Emargement réussi")
         logging.info("Emargement réussi")
 
     except NoSuchElementException:
@@ -171,7 +182,7 @@ def emarge(course_name):
         print(f"[{RED}-{RESET}] Impossible d'émarger")
 
     driver.quit()
-    time.sleep(55)
+    time.sleep(40)
 
 def schedule_random_times():
     """Randomly choose when to emerge for each events for today"""
@@ -187,7 +198,7 @@ def schedule_random_times():
     events_filtered = filter_events(events_today)
 
     for event in events_filtered:
-        start_hour = (event["start"] + timedelta(minutes=random.randint(5, 15))).strftime("%H:%M")
+        start_hour = (event["start"] + timedelta(minutes=random.randint(10, 20))).strftime("%H:%M")
         schedule.every().day.at(start_hour).do(lambda event_name=event["name"]: emarge(event_name))
         times.append(f"{start_hour}")
 

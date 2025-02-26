@@ -8,6 +8,7 @@
 - Random attendance check-in delays (5-15 minutes)
 - Daily schedule refresh at midnight
 - Changelog file
+- FORMATION variable
 
 ### Changed
 - Moved from static to dynamic scheduling
@@ -20,6 +21,7 @@
 - Resolved Selenium timing issues with additional delays
 - Resolved schedule timing issues
 - Corrected timezone discrepancies in schedule fetching
+- Adjusted some timing with wooden connection like eduroam
 
 ## [v2.0] - 2024-12-15
 
