@@ -4,6 +4,8 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import NoSuchElementException
+from fake_useragent import UserAgent
+from bs4 import BeautifulSoup
 import time
 import os
 import logging
@@ -15,7 +17,7 @@ import datetime
 import random
 import requests
 import json
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, timedelta
 
 # Set the timezone and allowed days
 PARIS_TZ = pytz.timezone("Europe/Paris")
@@ -78,8 +80,6 @@ logging.basicConfig(
 options = Options()
 options.add_argument('-headless')
 
-service = Service(executable_path=f"geckodriver")
-
 def filter_events(events):
     """Filter the events to only keep the ones we want to emerge"""
     filtered_events = []
@@ -103,13 +103,14 @@ def hours_Emarge():
     events = [
         {
             "name": event["name"],
-            "start": datetime.fromtimestamp(event["start"] / 1000, UTC) + timedelta(hours=1),
-            "end": datetime.fromtimestamp(event["end"] / 1000, UTC) + timedelta(hours=1),
+            "start": datetime.fromtimestamp(event["start"] / 1000, tz=PARIS_TZ),
+            "end": datetime.fromtimestamp(event["end"] / 1000, tz=PARIS_TZ),
         }
         for planning in data.get("plannings", [])
         for event in planning.get("events", [])
-        if (datetime.fromtimestamp(event["start"] / 1000, UTC) + timedelta(hours=1)).strftime("%Y-%m-%d") == today_str
-        and datetime.fromtimestamp(event["end"] / 1000, UTC) + timedelta(hours=1) > datetime.now(PARIS_TZ)
+        if (datetime.fromtimestamp(event["start"] / 1000, tz=PARIS_TZ)).strftime("%Y-%m-%d") == today_str
+        and (datetime.fromtimestamp(event["start"] / 1000, tz=PARIS_TZ)) + timedelta(minutes=15) > datetime.now(PARIS_TZ)
+        and 8 <= (datetime.fromtimestamp(event["start"] / 1000, tz=PARIS_TZ)).hour <= 18
     ]
 
     # Return the list of events of today
@@ -117,13 +118,14 @@ def hours_Emarge():
 
 def emarge(course_name):
     """Perform all the process like a normal student to emerge"""
-    driver = webdriver.Firefox(options=options, service=service)
+    options.set_preference("general.useragent.override", f"{UserAgent(os='Linux').random}")
+    driver = webdriver.Firefox(options=options, service=Service("geckodriver"))
 
     logging.info(f"Ouverture du navigateur Selenium pour {course_name}")
     print(f"[{BLUE}+{RESET}] Ouverture du navigateur Selenium pour {course_name}")
 
     driver.get("https://moodle.univ-ubs.fr/")
-    time.sleep(3)
+    time.sleep(5)
 
     # Select UBS on the mir
     select_element = driver.find_element(By.ID, "idp")
@@ -131,7 +133,7 @@ def emarge(course_name):
     dropdown.select_by_visible_text("Université Bretagne Sud - UBS")
     select_button = driver.find_element(By.XPATH, "//button[@type='submit' and contains(@class, 'btn-primary')]")
     select_button.click()
-    time.sleep(3)
+    time.sleep(5)
 
     # Enter USERNAME / PASSWORD and submit them
     username_input = driver.find_element(By.ID, "username")
@@ -144,21 +146,24 @@ def emarge(course_name):
     # Check if the mir accepted our credentials
     try:
         driver.find_element(By.ID, "loginErrorsPanel")
-        print(f"[{RED}-{RESET}] Mauvais identifiant ou mot de passe")
-        logging.warning("Mauvais identifiant ou mot de passe")
+        print(f"[{RED}-{RESET}] Identifiant ou mot de passe incorrect")
+        logging.warning("Identifiant ou mot de passe incorrect")
         driver.quit()
         quit()
     except NoSuchElementException:
-        logging.info("Connection réussi")
-    time.sleep(5)
+        logging.info("Connexion réussie")
+    time.sleep(10)
 
-    # Click on the first result that contains "Émargement"
-    try:
-        emargement_link = driver.find_element(By.XPATH, "//a[contains(., 'ENSIBS : Émargement')]")
-        emargement_href = emargement_link.get_attribute("href")
-        driver.get(emargement_href)
+    try: 
+        # Click on the first result that contains "Émargement"
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        target_span = soup.find('span', class_='sr-only', string='ENSIBS : Émargement')
+        link = target_span.find_next('a')
+        href = link.get('href')
+        driver.get(href)
         time.sleep(5)
-    except NoSuchElementException:
+
+    except:
         logging.warning("Impossible de trouver le lien d'émargement")
         print(f"[{RED}-{RESET}] Impossible de trouver le lien d'émargement")
         driver.quit()
@@ -166,31 +171,35 @@ def emarge(course_name):
 
     # Click on the "Présence" link
     try:
-        presence_link = driver.find_element(By.XPATH, "//a[contains(., 'Présence')]")
-        presence_href = presence_link.get_attribute("href")
-        driver.get(presence_href)
-        time.sleep(5)
-    except NoSuchElementException:
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        activity_divs = soup.find_all('div', class_='activityname')
+        for div in activity_divs:
+            if "Présence" in div.text:
+                link = div.find('a')['href']
+                driver.get(link)
+                time.sleep(5)
+                break
+    except:
         logging.warning("Impossible de trouver le lien d'attendance")
         print(f"[{RED}-{RESET}] Impossible de trouver le lien d'attendance")
         driver.quit()
         quit()
 
-    # Check if the button to emerge is here, if yes, we click it
+    # Click on the "Envoyer le statut de présence"
     try:
-        link_element = driver.find_element(By.XPATH, "//a[contains(text(), 'Envoyer le statut de présence')]")
-        link_href = link_element.get_attribute("href")
-        driver.get(link_href)
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        link = soup.find('a', string='Envoyer le statut de présence')
+        href = link.get('href')
+        driver.get(href)
         time.sleep(2)
         print(f"[{GREEN}*{RESET}] Emargement réussi")
         logging.info("Emargement réussi")
-
-    except NoSuchElementException:
+    except:
         logging.warning("Impossible d'émarger")
         print(f"[{RED}-{RESET}] Impossible d'émarger")
 
     driver.quit()
-    time.sleep(40)
+    time.sleep(20)
 
 def schedule_random_times():
     """Randomly choose when to emerge for each events for today"""
@@ -220,10 +229,10 @@ def schedule_random_times():
 
 schedule_random_times()
 
-# Choose new random times to emerge for today
-schedule.every().day.at("00:00").do(schedule_random_times)
+# Choose new random times to emarge for today
+schedule.every().day.at("07:00").do(schedule_random_times)
 
-# While loop to check every minute if it's the time to emerge
+# While loop to check every minute if it's the time to emarge
 while True:
     schedule.run_pending()
     time.sleep(60)

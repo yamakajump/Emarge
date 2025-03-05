@@ -1,5 +1,19 @@
 # Changelog
 
+## [v2.3] - 2025-03-05
+
+### Added
+- Random user agent on linux
+- Request the API to emarge at 7h
+- Can only emarge between 8h and 18h
+
+### Changed
+- Switch to BeautifulSoup
+
+### Fixed
+- Wierd bug on the reset part
+- Fixed TimeZone filtering on API
+
 ## [v2.2] - 2025-02-26
 
 ### Added
