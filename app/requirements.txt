@@ -1,3 +1,5 @@
 selenium>=4.10.0
 schedule
 pytz
+beautifulsoup4
+fake_useragent
