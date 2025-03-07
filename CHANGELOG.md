@@ -12,7 +12,8 @@
 
 ### Fixed
 - Wierd bug on the reset part
-- Fixed TimeZone filtering on API
+- TimeZone filtering on API
+- Bot stop restarting himself
 
 ## [v2.2] - 2025-02-26
 

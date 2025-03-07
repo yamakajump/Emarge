@@ -42,6 +42,26 @@ Exemple de configuration d'un cyberdefense en 3eme année dans le TP 1
 sudo docker compose up -d
 ```
 
+## Upgrade
+
+Pour commencer, il faut supprimer le conteneur Docker avec la commande
+
+```bash
+sudo docker compose down
+```
+
+Ensuite, il faut mettre à jour le projet avec conteneur Docker, commencez par mettre à jour les différents fichiers avec
+
+```bash
+git pull
+```
+
+Enfin, il ne reste plus qu'à le relancer avec l'option `--build` en plus
+
+```bash
+sudo docker compose up --build -d
+```
+
 ## 📊 Vérification des logs
 
 Vous pouvez vérifier vos logs de deux manières :

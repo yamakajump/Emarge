@@ -204,6 +204,7 @@ def emarge(course_name):
 def schedule_random_times():
     """Randomly choose when to emerge for each events for today"""
     schedule.clear()
+    schedule.every().day.at("7:00").do(schedule_random_times)
     times = []
 
     # Check if current day is weekend (5 = Saturday, 6 = Sunday)
@@ -229,10 +230,7 @@ def schedule_random_times():
 
 schedule_random_times()
 
-# Choose new random times to emarge for today
-schedule.every().day.at("07:00").do(schedule_random_times)
-
 # While loop to check every minute if it's the time to emarge
-while True:
+while True:  
     schedule.run_pending()
     time.sleep(60)
