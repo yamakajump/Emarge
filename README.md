@@ -57,6 +57,8 @@ Les notifications sont gérées avec [ntfy.sh](https://ntfy.sh/), son utilisati
 > [!NOTE]
 > Les **topics** sont partagés et hébergés sur un serveur public, entrez donc une valeur aléatoire pour éviter de recevoir des notifications indésirables envoyées par d'autres utilisateurs ainsi que de partager vos notifications
 
+Merci à [@Eudaeon](https://github.com/Eudaeon) pour l'idée ainsi que de l'intégration
+
 ## Upgrade
 
 Pour commencer, il faut supprimer le conteneur Docker avec la commande
@@ -68,7 +70,7 @@ sudo docker compose down
 Ensuite, il faut mettre à jour le projet avec conteneur Docker, commencez par mettre à jour les différents fichiers avec
 
 ```bash
-git pull
+git pull --force
 ```
 
 Enfin, il ne reste plus qu'à le relancer avec l'option `--build` en plus
