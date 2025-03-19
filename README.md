@@ -70,7 +70,8 @@ sudo docker compose down
 Ensuite, il faut mettre à jour le projet avec conteneur Docker, commencez par mettre à jour les différents fichiers avec
 
 ```bash
-git pull --force
+git reset --hard
+git pull
 ```
 
 Enfin, il ne reste plus qu'à le relancer avec l'option `--build` en plus
