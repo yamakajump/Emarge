@@ -35,6 +35,7 @@ FORMATION = os.getenv("FORMATION")
 A = os.getenv("ANNEE")
 TP = os.getenv("TP")
 blacklist = os.getenv("blacklist")
+TOPIC = os.getenv("TOPIC")
 
 if USERNAME == 'USER' or PASSWORD == 'PASS' or A == "X" or TP == "X" or FORMATION == "X":
     print(f"[{RED}-{RESET}] Vous devez d'abord définir les variables d'environnements dans le docker-compose.yml")
@@ -50,16 +51,17 @@ if not (FORMATION == "cyberdefense" or FORMATION == "cyberdata" or FORMATION == 
     print(f"[{RED}-{RESET}] Votre FORMATION doit être cyberdefense, cyberdata ou cyberlog")
     quit()
 
+API_URL = "https://planningsup.app/api/v1/calendars"
 if A == "3":
     S = 5
-    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}"
+    URL_PLANNING =  f"{API_URL}?p=ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}"
     URL_PLANNING += f",ensibs.{FORMATION}.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
 elif A == "4":
     S = 7
-    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}"
+    URL_PLANNING =  f"{API_URL}?p=ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}"
     URL_PLANNING += f",ensibs.{FORMATION}.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
 elif A == "5":
-    URL_PLANNING =  f"https://planningsup.app/api/v1/calendars?p=ensibs.{FORMATION}.{A}emeannee.tp{TP}"
+    URL_PLANNING =  f"{API_URL}?p=ensibs.{FORMATION}.{A}emeannee.tp{TP}"
 else:
     print(f"[{RED}-{RESET}] Votre ANNEE doit être 3, 4 ou 5")
     quit()
@@ -80,8 +82,68 @@ logging.basicConfig(
 options = Options()
 options.add_argument('-headless')
 
+def get_latest_commit_hash():
+    """
+    Fetch the latest commit from the GitHub repo
+    """
+    url = f"https://api.github.com/repos/MTlyx/Emarge/commits/main"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        return response.json()["sha"]
+    
+    log_print("Error fetching latest commit hash")
+    return None
+
+def check_for_updates(LAST_COMMIT_HASH):
+    """
+    Check if the git repo is up to date
+    """
+    latest_commit = get_latest_commit_hash()
+    
+    if latest_commit:
+        if latest_commit != LAST_COMMIT_HASH:
+            log_print(f"Une nouvelle mise à jour est disponible sur le github", "update")
+            LAST_COMMIT_HASH = latest_commit
+
+# Set the last github commit hash
+LAST_COMMIT_HASH = get_latest_commit_hash()
+
+def log_print(message, warning="info"):
+    """
+    Print a message with a specific color, log it and send a notification is needed.
+    """
+    current_time = datetime.now(PARIS_TZ).strftime("%H:%M")
+
+    if warning == "info":
+        print(f"[{BLUE}+{RESET}] {message}")
+        logging.info(message)
+    elif warning == "warning":
+        print(f"[{RED}-{RESET}] {message}")
+        logging.warning(message)
+        send_notification(f"❌ {message} à {current_time}")
+    elif warning == "success":
+        print(f"[{GREEN}*{RESET}] {message}")
+        logging.info(message)
+        send_notification(f"✅ {message} à {current_time}")
+    elif warning == "first":
+        print(f"[{GREEN}*{RESET}] {message}")
+        send_notification(f"⭐ Le programme d'émargement c'est bien lancé pour la premiere fois avec ntfy à {current_time}")
+    elif warning == "update":
+        print(f"[{BLUE}+{RESET}] {message}")
+        send_notification(f"🆕 {message}")
+
+def send_notification(message):
+    """
+    Envoie une notification via ntfy.sh si TOPIC est défini.
+    """
+    if TOPIC is not None and TOPIC != "XXXXXXXXXXX":
+        requests.post(f"https://ntfy.sh/{TOPIC}", data=message.encode())
+
 def filter_events(events):
-    """Filter the events to only keep the ones we want to emerge"""
+    """
+    Filter the events to only keep the ones we want to emerge
+    """
     filtered_events = []
     for event in events:
         if not any(blacklist in event["name"] for blacklist in blacklists):
@@ -89,7 +151,9 @@ def filter_events(events):
     return filtered_events
 
 def hours_Emarge():
-    """From the API, get each courses and their starting hours for today"""
+    """
+    From the API, get each courses and their starting hours for today
+    """
     response = requests.get(URL_PLANNING)
     try:
         data = response.json()
@@ -117,15 +181,16 @@ def hours_Emarge():
     return events
 
 def emarge(course_name):
-    """Perform all the process like a normal student to emerge"""
+    """
+    Perform all the process like a normal student to emerge
+    """
     options.set_preference("general.useragent.override", f"{UserAgent(os='Linux').random}")
-    driver = webdriver.Firefox(options=options, service=Service("geckodriver"))
+    driver = webdriver.Firefox(options=options)
 
-    logging.info(f"Ouverture du navigateur Selenium pour {course_name}")
-    print(f"[{BLUE}+{RESET}] Ouverture du navigateur Selenium pour {course_name}")
+    log_print(f"Ouverture du navigateur Selenium pour {course_name}")
 
     driver.get("https://moodle.univ-ubs.fr/")
-    time.sleep(5)
+    time.sleep(10)
 
     # Select UBS on the mir
     select_element = driver.find_element(By.ID, "idp")
@@ -133,7 +198,7 @@ def emarge(course_name):
     dropdown.select_by_visible_text("Université Bretagne Sud - UBS")
     select_button = driver.find_element(By.XPATH, "//button[@type='submit' and contains(@class, 'btn-primary')]")
     select_button.click()
-    time.sleep(5)
+    time.sleep(10)
 
     # Enter USERNAME / PASSWORD and submit them
     username_input = driver.find_element(By.ID, "username")
@@ -146,30 +211,28 @@ def emarge(course_name):
     # Check if the mir accepted our credentials
     try:
         driver.find_element(By.ID, "loginErrorsPanel")
-        print(f"[{RED}-{RESET}] Identifiant ou mot de passe incorrect")
-        logging.warning("Identifiant ou mot de passe incorrect")
+        log_print(f"Identifiant ou mot de passe incorrect", "warning")
         driver.quit()
         quit()
     except NoSuchElementException:
         logging.info("Connexion réussie")
     time.sleep(10)
 
-    try: 
-        # Click on the first result that contains "Émargement"
+    # Click on the first result that contains "ENSIBS : Émargement"
+    try:
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         target_span = soup.find('span', class_='sr-only', string='ENSIBS : Émargement')
         link = target_span.find_next('a')
         href = link.get('href')
         driver.get(href)
-        time.sleep(5)
+        time.sleep(10)
 
-    except:
-        logging.warning("Impossible de trouver le lien d'émargement")
-        print(f"[{RED}-{RESET}] Impossible de trouver le lien d'émargement")
+    except Exception as e:
+        log_print(f"Impossible de trouver le lien d'émargement pour {course_name} : {e}", "warning")
         driver.quit()
         quit()
 
-    # Click on the "Présence" link
+    # Click on the Présence link on the bottom of the page
     try:
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         activity_divs = soup.find_all('div', class_='activityname')
@@ -179,30 +242,38 @@ def emarge(course_name):
                 driver.get(link)
                 time.sleep(5)
                 break
-    except:
-        logging.warning("Impossible de trouver le lien d'attendance")
-        print(f"[{RED}-{RESET}] Impossible de trouver le lien d'attendance")
+    except Exception as e:
+        log_print(f"Impossible de trouver le lien d'émargement pour {course_name} : {e}", "warning")
         driver.quit()
         quit()
 
-    # Click on the "Envoyer le statut de présence"
+    # Click on Envoyer le statut de présence or Submit attendance in english
     try:
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         link = soup.find('a', string='Envoyer le statut de présence')
         href = link.get('href')
         driver.get(href)
-        time.sleep(2)
-        print(f"[{GREEN}*{RESET}] Emargement réussi")
-        logging.info("Emargement réussi")
+        time.sleep(5)
+        log_print(f"Emargement réussi pour {course_name}", "success")
     except:
-        logging.warning("Impossible d'émarger")
-        print(f"[{RED}-{RESET}] Impossible d'émarger")
+        try:
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            link = soup.find('a', string='Submit attendance')
+            href = link.get('href')
+            driver.get(href)
+            time.sleep(5)
+            log_print(f"Emargement réussi pour {course_name}", "success")
+        except:
+            log_print(f"Impossible d'émarger pour {course_name}", "warning")
 
     driver.quit()
-    time.sleep(20)
+    time.sleep(2)
 
 def schedule_random_times():
-    """Randomly choose when to emerge for each events for today"""
+    """ 
+    Set a date to emarge for each events of today.
+    """
+    check_for_updates(LAST_COMMIT_HASH)
     schedule.clear()
     schedule.every().day.at("07:00").do(schedule_random_times)
     times = []
@@ -215,22 +286,33 @@ def schedule_random_times():
     events_today = hours_Emarge()
     events_filtered = filter_events(events_today)
 
+    # Add a timedelta
     for event in events_filtered:
-        start_hour = (event["start"] + timedelta(minutes=random.randint(15, 25))).strftime("%H:%M")
+        start_hour = (event["start"] + timedelta(minutes=random.randint(5, 10))).strftime("%H:%M")
         schedule.every().day.at(start_hour).do(lambda event_name=event["name"]: emarge(event_name))
         times.append(f"{start_hour}")
 
     if times:
         times.sort()
-        logging.info(f"Emargement prévu à {', '.join(times)}")
-        print(f"[{BLUE}+{RESET}] Emargement prévu à {', '.join(times)}")
+        log_print(f"Emargement prévu à {', '.join(times)}")
     else:
-        logging.info("Aucun cours à venir aujourd'hui")
-        print(f"[{BLUE}+{RESET}] Aucun cours à venir aujourd'hui")
+        log_print(f"Aucun cours à venir aujourd'hui")
 
-schedule_random_times()
+def main():
+    """
+    Start the script the Emarge bot
+    """
+    if not os.path.exists("ntfy"):
+        log_print(f"Démarrage du programme d'émargement...", "first")
+        with open("ntfy", "w") as f:
+            pass
 
-# While loop to check every minute if it's the time to emarge
-while True:  
-    schedule.run_pending()
-    time.sleep(60)
+    schedule_random_times()
+
+    # While loop to check every minute if it's the time to emarge
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
+
+if __name__ == "__main__":
+    main()

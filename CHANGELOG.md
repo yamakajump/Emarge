@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2.4] - 2025-03-19
+    
+### Added
+- The possibility to have a notification on you phone with ntfy
+- Check each morning if their is an update
+- Logs the error
+- Support moodle on english
+
+### Changed
+- Use the geckodriver from the docker image
+- Emerge from 5-10 min
+
+### Fixed
+- Fix the delay to emarge on 1 min
+
 ## [v2.3] - 2025-03-05
 
 ### Added

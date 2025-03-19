@@ -1,6 +1,6 @@
-# 🎓 Automatisation de l'émargement v2.3
+# 🎓 Automatisation de l'émargement v2.4
 
-Ce projet vise à automatiser l'émargement des étudiants de l'Université Bretagne Sud, en particulier ceux de l'ENSIBS. En utilisant Selenium dans un conteneur Docker, il enregistre automatiquement leur présence en cours, évitant ainsi toute retenue sur leur salaire. Son fonctionnement : chaque jour de la semaine, il récupère les cours de l'étudiant via l'API de PlanningSup et, au début de chaque cours, il émarge automatiquement entre 15 et 25 minutes après le début du cours.
+Ce projet vise à automatiser l'émargement des étudiants de l'Université Bretagne Sud, en particulier ceux de l'ENSIBS. En utilisant Selenium dans un conteneur Docker, il enregistre automatiquement leur présence en cours, évitant ainsi toute retenue sur leur salaire. Son fonctionnement : chaque jour de la semaine, il récupère les cours de l'étudiant via l'API de PlanningSup et vérifie s'il y a une mise à jour. Au début de chaque cours, il émarge automatiquement entre 5 et 10 minutes après le début du cours. De plus, il est possible de recevoir une notification sur son téléphone pour être informé des nouvelles mises à jour, des émargements réussis ainsi que des possibles erreurs.
 
 > [!CAUTION]
 > Ce dépôt Github est à utiliser avec prudence. Si vous le mettez en place, assurez-vous d'être présent à chaque cours de votre emploi du temps.
@@ -21,7 +21,8 @@ Les variables à modifier sont les suivantes :
 - `TP` : Numéro du groupe de TP (1 à 6)
 - `Us` : Votre identifiant UBS
 - `Pa` : Votre mot de passe UBS
-- `blacklist` : Liste de mots-clés pour exclure certains cours de l'émargement automatique
+- `blacklist` : Liste de mots-clés pour exclure certains cours de l'émargement
+- `TOPIC` : Votre topic nfty à configurer ici [📢 Notification](#📢%20Notification)
 
 Exemple de configuration d'un cyberdefense en 3eme année dans le TP 1
 ```yaml
@@ -30,7 +31,8 @@ Exemple de configuration d'un cyberdefense en 3eme année dans le TP 1
 - TP=1
 - Us=E123456
 - Pa=MonSuperMotDePasse
-- blacklist=Entrainement Le Robert, Activités HACK2G2, Activités GCC
+- blacklist=Entrainement Le Robert, Activités HACK2G2, Activités GCC, Séminaire Facteur Humain
+- TOPIC=XXXXXXXXXXX
 ```
 
 > [!NOTE]
@@ -41,6 +43,19 @@ Exemple de configuration d'un cyberdefense en 3eme année dans le TP 1
 ```bash
 sudo docker compose up -d
 ```
+
+## 📢 Notification
+
+Les notifications sont gérées avec [ntfy.sh](https://ntfy.sh/), son utilisation est très simple
+
+1. Télécharger l'application sur Google Play ou l'App Store
+
+2. Configurez les notifications en appuyant sur le **+** puis en sélectionner un **topic**, il faudra aussi le rajouter dans le ``docker-compose.yml``
+
+3. Au premier lancement du programme d'émargement, vous devriez recevoir une notification pour tester la bonne configuration de ntfy
+
+> [!NOTE]
+> Les **topics** sont partagés et hébergés sur un serveur public, entrez donc une valeur aléatoire pour éviter de recevoir des notifications indésirables envoyées par d'autres utilisateurs ainsi que de partager vos notifications
 
 ## Upgrade
 
