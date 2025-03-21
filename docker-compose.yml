@@ -14,4 +14,5 @@ services:
       - blacklist=Entrainement Le Robert, Activités HACK2G2, Activités GCC, Séminaire Facteur Humain
       - TOPIC=XXXXXXXXXXX
       - TZ=Europe/Paris
+      - MODE=EMARGEMENT
     restart: unless-stopped

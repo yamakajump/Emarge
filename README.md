@@ -33,6 +33,7 @@ Exemple de configuration d'un cyberdefense en 3eme année dans le TP 1
 - Pa=MonSuperMotDePasse
 - blacklist=Entrainement Le Robert, Activités HACK2G2, Activités GCC, Séminaire Facteur Humain
 - TOPIC=XXXXXXXXXXX
+- MODE=EMARGEMENT
 ```
 
 > [!NOTE]
@@ -53,6 +54,14 @@ Les notifications sont gérées avec [ntfy.sh](https://ntfy.sh/), son utilisati
 2. Configurez les notifications en appuyant sur le **+** puis en sélectionner un **topic**, il faudra aussi le rajouter dans le ``docker-compose.yml``
 
 3. Au premier lancement du programme d'émargement, vous devriez recevoir une notification pour tester la bonne configuration de ntfy
+
+Il est aussi possible de passer le programme en mode notification seulement et il n'émargera pas à votre place
+
+1. Mettre la variable d'environnement ``MODE`` à ``NOTIFICATION`` dans  le ``docker-compose.yml``
+
+2. Bien renseigner le **topic** dans le ``docker-compose.yml``
+
+3. L'utilisation de ``Us`` et ``Pa`` est inutile vous pouvez les retirer.
 
 > [!NOTE]
 > Les **topics** sont partagés et hébergés sur un serveur public, entrez donc une valeur aléatoire pour éviter de recevoir des notifications indésirables envoyées par d'autres utilisateurs ainsi que de partager vos notifications

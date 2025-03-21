@@ -1,11 +1,3 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
-from selenium.common.exceptions import NoSuchElementException
-from fake_useragent import UserAgent
-from bs4 import BeautifulSoup
 import time
 import os
 import logging
@@ -36,11 +28,33 @@ A = os.getenv("ANNEE")
 TP = os.getenv("TP")
 blacklist = os.getenv("blacklist")
 TOPIC = os.getenv("TOPIC")
+MODE = os.getenv("MODE")
 
-if USERNAME == 'USER' or PASSWORD == 'PASS' or A == "X" or TP == "X" or FORMATION == "X":
-    print(f"[{RED}-{RESET}] Vous devez d'abord définir les variables d'environnements dans le docker-compose.yml")
+if A == "X" or TP == "X" or FORMATION == "X":
+    print(f"[{RED}-{RESET}] Vous devez d'abord définir les variables d'environnements A, TP et FORMATION dans le docker-compose.yml")
     time.sleep(5)
     quit()
+
+if MODE == "EMARGEMENT":
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import Select
+    from selenium.webdriver.firefox.service import Service
+    from selenium.webdriver.firefox.options import Options
+    from selenium.common.exceptions import NoSuchElementException
+    from fake_useragent import UserAgent
+    from bs4 import BeautifulSoup
+
+    # Set options for selenium
+    options = Options()
+    options.add_argument('-headless')
+
+    if USERNAME == 'USER' or PASSWORD == 'PASS':
+        print(f"[{RED}-{RESET}] Vous devez d'abord définir les variables d'environnements USER et PASS dans le docker-compose.yml")
+
+elif MODE == "NOTIFICATION":
+    if TOPIC is None and TOPIC == "XXXXXXXXXXX":
+        print(f"[{RED}-{RESET}] Pour le mode notification il faut renseigner un topic")
 
 TP = int(TP)
 if not 1 <= TP <= 6:
@@ -77,10 +91,6 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     filemode='a'
 )
-
-# Set options for selenium
-options = Options()
-options.add_argument('-headless')
 
 def get_latest_commit_hash():
     """
@@ -128,7 +138,7 @@ def log_print(message, warning="info"):
         send_notification(f"✅ {message} à {current_time}")
     elif warning == "first":
         print(f"[{GREEN}*{RESET}] {message}")
-        send_notification(f"⭐ Le programme d'émargement c'est bien lancé pour la premiere fois avec ntfy à {current_time}")
+        send_notification(f"⭐ Le programme d'émargement c'est bien lancé pour la premiere fois avec ntfy à {current_time} en mode {MODE}")
     elif warning == "update":
         print(f"[{BLUE}+{RESET}] {message}")
         send_notification(f"🆕 {message}")
@@ -288,8 +298,13 @@ def schedule_random_times():
 
     # Add a timedelta
     for event in events_filtered:
-        start_hour = (event["start"] + timedelta(minutes=random.randint(5, 10))).strftime("%H:%M")
-        schedule.every().day.at(start_hour).do(lambda event_name=event["name"]: emarge(event_name))
+        if MODE == "EMARGEMENT":
+            start_hour = (event["start"] + timedelta(minutes=random.randint(5, 10))).strftime("%H:%M")
+            schedule.every().day.at(start_hour).do(lambda event_name=event["name"]: emarge(event_name))
+        elif MODE == "NOTIFICATION":
+            start_hour = event["start"].strftime("%H:%M")
+            schedule.every().day.at(start_hour).do(lambda event_name=event["name"]: log_print(f"Il faut émarger pour {event_name}", "update"))
+
         times.append(f"{start_hour}")
 
     if times:
