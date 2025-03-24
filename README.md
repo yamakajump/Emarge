@@ -57,11 +57,13 @@ Les notifications sont gérées avec [ntfy.sh](https://ntfy.sh/), son utilisati
 
 Il est aussi possible de passer le programme en mode notification seulement et il n'émargera pas à votre place
 
-1. Mettre la variable d'environnement ``MODE`` à ``NOTIFICATION`` dans  le ``docker-compose.yml``
+1. Mettre la directive de build ``target`` à ``notification`` dans  le ``docker-compose.yml``
 
 2. Bien renseigner le **topic** dans le ``docker-compose.yml``
 
 3. L'utilisation de ``Us`` et ``Pa`` est inutile vous pouvez les retirer.
+
+4. Avant de relancer l'app avec ``docker compose up -d`` il faut la rebuild avec ``docker compose build``
 
 > [!NOTE]
 > Les **topics** sont partagés et hébergés sur un serveur public, entrez donc une valeur aléatoire pour éviter de recevoir des notifications indésirables envoyées par d'autres utilisateurs ainsi que de partager vos notifications

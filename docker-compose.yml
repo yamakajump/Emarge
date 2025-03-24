@@ -1,7 +1,8 @@
 services:
-  selenium:
-    build: ./
-    container_name: Emarge
+  app:
+    build: 
+      context: .
+      target: emargement
     shm_size: 2g
     volumes:
       - ./app/:/app/
@@ -14,5 +15,4 @@ services:
       - blacklist=Entrainement Le Robert, Activités HACK2G2, Activités GCC, Séminaire Facteur Humain
       - TOPIC=XXXXXXXXXXX
       - TZ=Europe/Paris
-      - MODE=EMARGEMENT
     restart: unless-stopped
