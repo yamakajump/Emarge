@@ -1,7 +1,8 @@
 services:
-  selenium:
-    build: ./
-    container_name: Emarge
+  app:
+    build: 
+      context: .
+      target: emargement
     shm_size: 2g
     volumes:
       - ./app/:/app/
