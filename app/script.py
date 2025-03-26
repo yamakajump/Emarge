@@ -21,8 +21,6 @@ BLUE = "\033[34m"
 RESET = "\033[0m"
 
 # Set variable with env from docker-compose
-USERNAME = os.getenv("Us")
-PASSWORD = os.getenv("Pa")
 FORMATION = os.getenv("FORMATION")
 A = os.getenv("ANNEE")
 TP = os.getenv("TP")
@@ -45,24 +43,33 @@ if MODE == "EMARGEMENT":
     from fake_useragent import UserAgent
     from bs4 import BeautifulSoup
 
+    USERNAME = os.getenv("Us")
+    PASSWORD = os.getenv("Pa")
+
     # Set options for selenium
     options = Options()
     options.add_argument('-headless')
 
     if USERNAME == 'USER' or PASSWORD == 'PASS':
         print(f"[{RED}-{RESET}] Vous devez d'abord définir les variables d'environnements USER et PASS dans le docker-compose.yml")
+        time.sleep(5)
+        quit()
 
 elif MODE == "NOTIFICATION":
     if TOPIC is None and TOPIC == "XXXXXXXXXXX":
-        print(f"[{RED}-{RESET}] Pour le mode notification il faut renseigner un topic")
+        print(f"[{RED}-{RESET}] Utiliser le mode notification sans renseigner de topic est inutile")
+        time.sleep(5)
+        quit()
 
 TP = int(TP)
 if not 1 <= TP <= 6:
     print(f"[{RED}-{RESET}] Votre TP doit être compris entre 1 et 6")
+    time.sleep(5)
     quit()
 
-if not (FORMATION == "cyberdefense" or FORMATION == "cyberdata" or FORMATION == "cyberlog"):
+if FORMATION not in {"cyberdefense", "cyberdata", "cyberlog"}:
     print(f"[{RED}-{RESET}] Votre FORMATION doit être cyberdefense, cyberdata ou cyberlog")
+    time.sleep(5)
     quit()
 
 API_URL = "https://planningsup.app/api/v1/calendars"
@@ -78,6 +85,7 @@ elif A == "5":
     URL_PLANNING =  f"{API_URL}?p=ensibs.{FORMATION}.{A}emeannee.tp{TP}"
 else:
     print(f"[{RED}-{RESET}] Votre ANNEE doit être 3, 4 ou 5")
+    time.sleep(5)
     quit()
 
 if blacklist:
@@ -113,7 +121,7 @@ def check_for_updates(LAST_COMMIT_HASH):
     
     if latest_commit:
         if latest_commit != LAST_COMMIT_HASH:
-            log_print(f"Une nouvelle mise à jour est disponible sur le github", "update")
+            log_print(f"Une nouvelle mise à jour est disponible sur github", "update")
             LAST_COMMIT_HASH = latest_commit
 
 # Set the last github commit hash
@@ -145,7 +153,7 @@ def log_print(message, warning="info"):
 
 def send_notification(message):
     """
-    Envoie une notification via ntfy.sh si TOPIC est défini.
+    Send a notification with ntfy.sh if the TOPIC is set
     """
     if TOPIC is not None and TOPIC != "XXXXXXXXXXX":
         requests.post(f"https://ntfy.sh/{TOPIC}", data=message.encode())

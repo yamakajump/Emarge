@@ -1,8 +1,8 @@
 services:
   app:
-    build: 
+    build:
       context: .
-      target: emargement
+      target: emargement  #notification
     shm_size: 2g
     volumes:
       - ./app/:/app/

@@ -3,7 +3,8 @@
 ## [v2.4] - 2025-03-19
     
 ### Added
-- The possibility to have a notification on you phone with ntfy
+- The possibility to have a notification on your phone with ntfy when you emerge
+- The possibility to only get notification on your phone
 - Check each morning if their is an update
 - Logs the error
 - Support moodle on english
@@ -14,6 +15,7 @@
 
 ### Fixed
 - Fix the delay to emarge on 1 min
+- Optimize docker build
 
 ## [v2.3] - 2025-03-05
 

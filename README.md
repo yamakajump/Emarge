@@ -22,7 +22,7 @@ Les variables à modifier sont les suivantes :
 - `Us` : Votre identifiant UBS
 - `Pa` : Votre mot de passe UBS
 - `blacklist` : Liste de mots-clés pour exclure certains cours de l'émargement
-- `TOPIC` : Votre topic nfty à configurer ici [📢 Notification](#📢%20Notification)
+- `TOPIC` : Votre topic nfty à configurer ici [📢 Notification](#📢 Notification)
 
 Exemple de configuration d'un cyberdefense en 3eme année dans le TP 1
 ```yaml
@@ -33,7 +33,6 @@ Exemple de configuration d'un cyberdefense en 3eme année dans le TP 1
 - Pa=MonSuperMotDePasse
 - blacklist=Entrainement Le Robert, Activités HACK2G2, Activités GCC, Séminaire Facteur Humain
 - TOPIC=XXXXXXXXXXX
-- MODE=EMARGEMENT
 ```
 
 > [!NOTE]
@@ -55,20 +54,26 @@ Les notifications sont gérées avec [ntfy.sh](https://ntfy.sh/), son utilisati
 
 3. Au premier lancement du programme d'émargement, vous devriez recevoir une notification pour tester la bonne configuration de ntfy
 
+Merci à [@Eudaeon](https://github.com/Eudaeon) pour l'idée
+
+---
+
 Il est aussi possible de passer le programme en mode notification seulement et il n'émargera pas à votre place
 
 1. Mettre la directive de build ``target`` à ``notification`` dans  le ``docker-compose.yml``
 
-2. Bien renseigner le **topic** dans le ``docker-compose.yml``
+2. Renseigner le **topic** dans le ``docker-compose.yml`` ainsi que votre formation, année et TP 
 
-3. L'utilisation de ``Us`` et ``Pa`` est inutile vous pouvez les retirer.
+3. L'utilisation de ``Us`` et ``Pa`` est inutile, vous n'avez donc pas besoin de les configurer
 
-4. Avant de relancer l'app avec ``docker compose up -d`` il faut la rebuild avec ``docker compose build``
+4. Si vous aviez déjà lancé le projet, vous devrez rajouter l'option ``--build``
+
+5. Lancer le projet avec ``docker compose up -d``
 
 > [!NOTE]
 > Les **topics** sont partagés et hébergés sur un serveur public, entrez donc une valeur aléatoire pour éviter de recevoir des notifications indésirables envoyées par d'autres utilisateurs ainsi que de partager vos notifications
 
-Merci à [@Eudaeon](https://github.com/Eudaeon) pour l'idée ainsi que de l'intégration
+Merci à [@ElouanFiore](https://github.com/ElouanFiore) pour l'intégration
 
 ## Upgrade
 
