@@ -1,18 +1,20 @@
 FROM selenium/standalone-firefox:latest AS emargement
 
+USER root
+
 WORKDIR /app
 
 COPY app/requirements* ./
 
-RUN sudo pip install --no-cache-dir -r requirements.txt --break-system-packages
-
-RUN sudo pip install --no-cache-dir -r requirements-selenium.txt --break-system-packages
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-selenium.txt --break-system-packages
 
 COPY app/* ./
 
 ENV MODE=EMARGEMENT
 
-CMD ["sudo", "--preserve-env=Us,Pa,TZ,ANNEE,TP,FORMATION,blacklist,TOPIC,MODE", "bash", "-c", "python3 -u script.py"]
+CMD ["python3", "-u", "script.py"]
+
+
 
 FROM python:3 AS notification
 
