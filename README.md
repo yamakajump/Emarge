@@ -22,14 +22,14 @@ Les variables à modifier sont les suivantes :
 - `Us` : Votre identifiant UBS
 - `Pa` : Votre mot de passe UBS
 - `blacklist` : Liste de mots-clés pour exclure certains cours de l'émargement
-- `TOPIC` : Votre topic nfty à configurer ici [📢 Notification](#📢 Notification)
+- `TOPIC` : Votre topic nfty à configurer [ici](#Notification)
 
 Exemple de configuration d'un cyberdefense en 3eme année dans le TP 1
 ```yaml
 - FORMATION=cyberdefense
 - ANNEE=3
 - TP=1
-- Us=E123456
+- Us=e2404000
 - Pa=MonSuperMotDePasse
 - blacklist=Entrainement Le Robert, Activités HACK2G2, Activités GCC, Séminaire Facteur Humain
 - TOPIC=XXXXXXXXXXX
