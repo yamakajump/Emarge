@@ -3,7 +3,7 @@ services:
     container_name: Emarge
     build:
       context: .
-      target: notification  #notification #emargement
+      target: emargement  #notification #emargement
     shm_size: 2g
     volumes:
       - ./app/:/app/

@@ -12,6 +12,7 @@
 ### Changed
 - Use the geckodriver from the docker image
 - Emerge from 5-10 min
+- To check for new update
 
 ### Fixed
 - Fix the delay to emarge on 1 min

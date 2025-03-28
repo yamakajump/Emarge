@@ -100,32 +100,32 @@ logging.basicConfig(
     filemode='a'
 )
 
-def get_latest_commit_hash():
+def get_latest_releases_name():
     """
-    Fetch the latest commit from the GitHub repo
+    Fetch the latest releases from the GitHub repo
     """
-    url = f"https://api.github.com/repos/MTlyx/Emarge/commits/main"
+    url = f"https://api.github.com/repos/MTlyx/Emarge/releases/latest"
     response = requests.get(url)
     
     if response.status_code == 200:
-        return response.json()["sha"]
+        return response.json()["name"]
     
-    log_print("Error fetching latest commit hash")
+    log_print("Error fetching latest releases")
     return None
 
-def check_for_updates(LAST_COMMIT_HASH):
+def check_for_updates(LAST_RELEASE_NAME):
     """
     Check if the git repo is up to date
     """
-    latest_commit = get_latest_commit_hash()
+    latest_name = get_latest_releases_name()
     
-    if latest_commit:
-        if latest_commit != LAST_COMMIT_HASH:
-            log_print(f"Une nouvelle mise à jour est disponible sur github", "update")
-            LAST_COMMIT_HASH = latest_commit
+    if latest_name:
+        if latest_name != LAST_RELEASE_NAME:
+            log_print(f"La nouvelle mise à jour {latest_name} est disponible sur github", "update")
+            LAST_RELEASE_NAME = latest_name
 
 # Set the last github commit hash
-LAST_COMMIT_HASH = get_latest_commit_hash()
+LAST_RELEASE_NAME = get_latest_releases_name()
 
 def log_print(message, warning="info"):
     """
@@ -291,7 +291,7 @@ def schedule_random_times():
     """ 
     Set a date to emarge for each events of today.
     """
-    check_for_updates(LAST_COMMIT_HASH)
+    check_for_updates(LAST_RELEASE_NAME)
     schedule.clear()
     schedule.every().day.at("07:00").do(schedule_random_times)
     times = []
