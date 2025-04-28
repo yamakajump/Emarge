@@ -333,6 +333,7 @@ def main():
         with open("ntfy", "w") as f:
             pass
 
+    print(f"Script d'émargement prêt !")
     schedule_random_times()
 
     # While loop to check every minute if it's the time to emarge
