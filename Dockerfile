@@ -1,15 +1,24 @@
 FROM selenium/standalone-firefox:latest
 
+# Crée l'utilisateur "container" et lui donne un home dédié
+RUN useradd -m -d /home/container container
+
 USER root
 WORKDIR /home/container
 
 # Copie requirements & entrypoint
-COPY ./requirements.txt /home/container/requirements.txt
+COPY ./requirements.txt .
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Copie le code de l'app (optionnel)
-COPY . /home/container
+# Copie tout ton code (optionnel)
+COPY . .
 
-# Laisses Pterodactyl gérer la commande grâce à entrypoint.sh
+# Change les ownership sur le dossier de travail pour l'utilisateur "container"
+RUN chown -R container:container /home/container
+
+# Passe sur l’utilisateur restreint
+USER container
+
+# Par défaut, laisse Pterodactyl gérer l’entrée grâce à entrypoint.sh
 CMD ["/bin/bash", "/entrypoint.sh"]
