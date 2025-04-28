@@ -3,9 +3,6 @@ set -e
 
 cd /home/container
 
-# pip install dans /home/container/.local (car pas d'écriture dans /opt/venv)
-pip install --user --no-cache-dir -r requirements.txt
-
 # Ajoute ~/.local/bin au PATH pour les dépendances user
 export PATH=$PATH:/home/container/.local/bin
 

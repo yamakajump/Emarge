@@ -13,6 +13,8 @@ COPY ./requirements.txt .
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
+
 # Copie tout ton code (optionnel)
 COPY . .
 
