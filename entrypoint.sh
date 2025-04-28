@@ -3,7 +3,8 @@ set -e
 
 cd /home/container
 
-# Ajoute ~/.local/bin au PATH pour les dépendances user
+# Ajoute le vrai chemin Python du container Selenium
+export PATH="/opt/venv/bin:$PATH"
 export PATH=$PATH:/home/container/.local/bin
 
 # Remplace les {{VAR}} par ${VAR} dans STARTUP pour compatibilité
