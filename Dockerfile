@@ -4,12 +4,12 @@ USER root
 
 WORKDIR /app
 
-COPY ./requirements* ./
+COPY ./requirements.txt /app/requirements.txt
+COPY ./entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
+# Copier tout le code (hors requirements pour éviter rebuild sur chaque code modif)
+COPY . /app
 
-COPY ./* ./
-
-ENV MODE=EMARGEMENT
-
-CMD ["python3", "-u", "script.py"]
+# Laisse le choix à l'utilisateur Pterodactyl de la commande de démarrage (ex: python3 script.py)
+CMD ["/entrypoint.sh"]
