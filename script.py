@@ -10,6 +10,7 @@ import random
 import requests
 import json
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
 # Set the timezone and allowed days
 PARIS_TZ = pytz.timezone("Europe/Paris")
@@ -19,6 +20,8 @@ GREEN = "\033[32m"
 RED = "\033[31m"
 BLUE = "\033[34m"
 RESET = "\033[0m"
+
+load_dotenv()
 
 # Set variable with env from docker-compose
 FORMATION = os.getenv("FORMATION")
