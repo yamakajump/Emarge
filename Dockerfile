@@ -4,11 +4,11 @@ USER root
 
 WORKDIR /app
 
-COPY app/requirements* ./
+COPY ./requirements* ./
 
 RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
 
-COPY app/* ./
+COPY ./* ./
 
 ENV MODE=EMARGEMENT
 
