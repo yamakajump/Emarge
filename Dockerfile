@@ -4,6 +4,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Définir la variable HOME pour l'utilisateur non-root
 ENV HOME=/home/container
+ENV TZ=Europe/Paris
 
 # S'assurer d'être en root pour l'installation des paquets système
 USER root
