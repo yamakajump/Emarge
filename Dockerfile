@@ -18,11 +18,16 @@ RUN apt-get update && \
       jq \
       less \
       python3-pip \
+      python3-venv \
       tree \
       unzip \
       vim \
       wget \
     && rm -rf /var/lib/apt/lists/*
+
+# Créer un virtualenv pour compatibilité Pterodactyl
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Installation de Google Chrome
 RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
@@ -48,7 +53,7 @@ COPY ./requirements.txt .
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
+RUN /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Copie tout ton code
 COPY . .
