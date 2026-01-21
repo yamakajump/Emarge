@@ -1,8 +1,7 @@
 schedule
 pytz
 requests
-selenium
+selenium>=4.10.0
 beautifulsoup4
 fake_useragent
 python-dotenv
- 

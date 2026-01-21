@@ -40,8 +40,8 @@ if MODE == "EMARGEMENT":
     from selenium import webdriver
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import Select
-    from selenium.webdriver.firefox.service import Service
-    from selenium.webdriver.firefox.options import Options
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.chrome.service import Service
     from selenium.common.exceptions import NoSuchElementException
     from fake_useragent import UserAgent
     from bs4 import BeautifulSoup
@@ -51,7 +51,13 @@ if MODE == "EMARGEMENT":
 
     # Set options for selenium
     options = Options()
-    options.add_argument('-headless')
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument('--lang=fr-FR')
+
+    service = Service("/usr/local/bin/chromedriver")
 
     if USERNAME == 'USER' or PASSWORD == 'PASS':
         print(f"[{RED}-{RESET}] Vous devez d'abord définir les variables d'environnements USER et PASS dans le docker-compose.yml")
@@ -75,17 +81,25 @@ if FORMATION not in {"cyberdefense", "cyberdata", "cyberlog"}:
     time.sleep(5)
     quit()
 
-API_URL = "https://planningsup.app/api/v1/calendars"
+API_URL = "https://planningsup.app/api/plannings"
+PLANNING_IDS = []
 if A == "3":
     S = 5
-    URL_PLANNING =  f"{API_URL}?p=ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}"
-    URL_PLANNING += f",ensibs.{FORMATION}.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
+    PLANNING_IDS = [
+        f"ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}",
+        f"ensibs.{FORMATION}.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}",
+    ]
 elif A == "4":
     S = 7
-    URL_PLANNING =  f"{API_URL}?p=ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}"
-    URL_PLANNING += f",ensibs.{FORMATION}.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}"
+    PLANNING_IDS = [
+        f"ensibs.{FORMATION}.{A}emeannee.semestre{S}s{S}.tp{TP}",
+        f"ensibs.{FORMATION}.{A}emeannee.semestre{S+1}s{S+1}.tp{TP}",
+    ]
 elif A == "5":
-    URL_PLANNING =  f"{API_URL}?p=ensibs.{FORMATION}.{A}emeannee.tp{TP}"
+    if FORMATION == "cyberdata":
+        PLANNING_IDS = [f"ensibs.{FORMATION}.{A}emeannee.semestre9s9.tp{TP}"]
+    else:
+        PLANNING_IDS = [f"ensibs.{FORMATION}.{A}emeannee.tp{TP}"]
 else:
     print(f"[{RED}-{RESET}] Votre ANNEE doit être 3, 4 ou 5")
     time.sleep(5)
@@ -161,6 +175,86 @@ def send_notification(message):
     if TOPIC is not None and TOPIC != "XXXXXXXXXXX":
         requests.post(f"https://ntfy.sh/{TOPIC}", data=message.encode())
 
+def ensure_minimum_gap(events):
+    """
+    Ensure events are mapped to predefined time slots and only one emargement per slot.
+    Time slots: 8h-9h30, 9h45-11h15, 11h30-13h00, 13h00-14h30, 14h45-16h15, 16h30-18h00, 18h15-19h45
+    """
+    if not events:
+        return []
+
+    # Define the predefined time slots
+    TIME_SLOTS = [
+        ("08:00", "09:30"),
+        ("09:45", "11:15"),
+        ("11:30", "13:00"),
+        ("13:00", "14:30"),
+        ("14:45", "16:15"),
+        ("16:30", "18:00"),
+        ("18:15", "19:45")
+    ]
+
+    # Sort events by start time
+    sorted_events = sorted(events, key=lambda x: x["start"])
+
+    result = []
+    used_slots = set()  # Track which slots have been used for emargement
+
+    for event in sorted_events:
+        event_start = event["start"]
+        event_end = event["end"]
+
+        # Find which time slot(s) this event overlaps with
+        overlapping_slots = []
+
+        for i, (slot_start, slot_end) in enumerate(TIME_SLOTS):
+            # Convert slot times to datetime objects for comparison
+            slot_start_dt = event_start.replace(
+                hour=int(slot_start.split(':')[0]),
+                minute=int(slot_start.split(':')[1]),
+                second=0,
+                microsecond=0
+            )
+            slot_end_dt = event_start.replace(
+                hour=int(slot_end.split(':')[0]),
+                minute=int(slot_end.split(':')[1]),
+                second=0,
+                microsecond=0
+            )
+
+            # Check if event overlaps with this slot
+            if (event_start < slot_end_dt and event_end > slot_start_dt):
+                overlapping_slots.append(i)
+
+        # Create emargement events for each overlapping slot that hasn't been used
+        for slot_index in overlapping_slots:
+            if slot_index not in used_slots:
+                slot_start, slot_end = TIME_SLOTS[slot_index]
+
+                # Create new event for this slot
+                slot_start_dt = event_start.replace(
+                    hour=int(slot_start.split(':')[0]),
+                    minute=int(slot_start.split(':')[1]),
+                    second=0,
+                    microsecond=0
+                )
+                slot_end_dt = event_start.replace(
+                    hour=int(slot_end.split(':')[0]),
+                    minute=int(slot_end.split(':')[1]),
+                    second=0,
+                    microsecond=0
+                )
+
+                # Create new event for emargement
+                emarge_event = event.copy()
+                emarge_event["start"] = slot_start_dt
+                emarge_event["end"] = slot_end_dt
+
+                result.append(emarge_event)
+                used_slots.add(slot_index)
+
+    return result
+
 def filter_events(events):
     """
     Filter the events to only keep the ones we want to emerge
@@ -171,32 +265,97 @@ def filter_events(events):
             filtered_events.append(event)
     return filtered_events
 
+def parse_planningsup_datetime(value):
+    """
+    Parse PlanningSup timestamps (ISO or ms) and convert to Paris timezone.
+    """
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return datetime.fromtimestamp(value / 1000, tz=PARIS_TZ)
+    if not isinstance(value, str):
+        return None
+    try:
+        normalized = value.replace("Z", "+00:00") if value.endswith("Z") else value
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return PARIS_TZ.localize(parsed)
+    return parsed.astimezone(PARIS_TZ)
+
+def fetch_planning_events(planning_id):
+    """
+    Fetch events for a planning from the PlanningSup API.
+    """
+    url = f"{API_URL}/{planning_id}"
+    try:
+        response = requests.get(
+            url,
+            params={"events": "true"},
+            headers={"Accept-Encoding": "gzip, deflate"},
+            timeout=20,
+        )
+    except requests.RequestException as exc:
+        logging.error(f"Erreur API PlanningSup pour {planning_id} : {exc}")
+        return None
+
+    if response.status_code != 200:
+        logging.error(f"Erreur API PlanningSup pour {planning_id} : HTTP {response.status_code}")
+        return None
+
+    try:
+        data = response.json()
+    except json.decoder.JSONDecodeError:
+        logging.error(f"Réponse invalide de l'API PlanningSup pour {planning_id}")
+        return None
+
+    if not isinstance(data, dict) or "events" not in data:
+        logging.error(f"Réponse incomplète de l'API PlanningSup pour {planning_id}")
+        return None
+
+    return data.get("events", [])
+
 def hours_Emarge():
     """
     From the API, get each courses and their starting hours for today
     """
-    response = requests.get(URL_PLANNING)
-    try:
-        data = response.json()
-    except json.decoder.JSONDecodeError:
-        logging.error("Impossible de récupérer les données de l'API, vérifiez votre ANNEE, SEMESTRE et TP")
-        print(f"[{RED}-{RESET}] Impossible de récupérer les données de l'API, vérifiez votre ANNEE, SEMESTRE et TP")
+    now = datetime.now(PARIS_TZ)
+    today_str = now.strftime("%Y-%m-%d")
+    events = []
+    successful_plannings = 0
+    failed_plannings = []
+
+    for planning_id in PLANNING_IDS:
+        planning_events = fetch_planning_events(planning_id)
+        if planning_events is None:
+            failed_plannings.append(planning_id)
+            continue
+        successful_plannings += 1
+
+        for event in planning_events:
+            name = event.get("summary") or event.get("name") or event.get("title")
+            start_dt = parse_planningsup_datetime(event.get("startDate") or event.get("start"))
+            end_dt = parse_planningsup_datetime(event.get("endDate") or event.get("end"))
+
+            if not name or not start_dt or not end_dt:
+                continue
+            if start_dt.strftime("%Y-%m-%d") != today_str:
+                continue
+            if start_dt + timedelta(minutes=15) <= now:
+                continue
+            if not 8 <= start_dt.hour <= 18:
+                continue
+
+            events.append({"name": name, "start": start_dt, "end": end_dt})
+
+    if successful_plannings == 0:
+        logging.error("Impossible de récupérer les données de l'API PlanningSup, vérifiez votre ANNEE, FORMATION et TP")
+        print(f"[{RED}-{RESET}] Impossible de récupérer les données de l'API PlanningSup, vérifiez votre ANNEE, FORMATION et TP")
         quit()
 
-    today_str = datetime.now(PARIS_TZ).strftime("%Y-%m-%d")
-    # Extract relevant fields and convert timestamps
-    events = [
-        {
-            "name": event["name"],
-            "start": datetime.fromtimestamp(event["start"] / 1000, tz=PARIS_TZ),
-            "end": datetime.fromtimestamp(event["end"] / 1000, tz=PARIS_TZ),
-        }
-        for planning in data.get("plannings", [])
-        for event in planning.get("events", [])
-        if (datetime.fromtimestamp(event["start"] / 1000, tz=PARIS_TZ)).strftime("%Y-%m-%d") == today_str
-        and (datetime.fromtimestamp(event["start"] / 1000, tz=PARIS_TZ)) + timedelta(minutes=15) > datetime.now(PARIS_TZ)
-        and 8 <= (datetime.fromtimestamp(event["start"] / 1000, tz=PARIS_TZ)).hour <= 18
-    ]
+    if failed_plannings:
+        logging.warning(f"Plannings inaccessibles: {', '.join(failed_plannings)}")
 
     # Return the list of events of today
     return events
@@ -205,9 +364,8 @@ def emarge(course_name):
     """
     Perform all the process like a normal student to emerge
     """
-    options.set_preference("general.useragent.override", f"{UserAgent(os='Linux').random}")
-    driver = webdriver.Firefox(options=options)
-
+    options.add_argument(f"--user-agent={UserAgent(os='Linux').random}")
+    driver = webdriver.Chrome(service=service, options=options)
     log_print(f"Ouverture du navigateur Selenium pour {course_name}")
 
     driver.get("https://moodle.univ-ubs.fr/")
@@ -250,6 +408,7 @@ def emarge(course_name):
 
     except Exception as e:
         log_print(f"Impossible de trouver le lien d'émargement pour {course_name} : {e}", "warning")
+        driver.close()
         driver.quit()
         quit()
 
@@ -265,6 +424,7 @@ def emarge(course_name):
                 break
     except Exception as e:
         log_print(f"Impossible de trouver le lien d'émargement pour {course_name} : {e}", "warning")
+        driver.close()
         driver.quit()
         quit()
 
@@ -304,18 +464,19 @@ def schedule_random_times():
         return
 
     # Get from the API all the courses of the student for today
-    events_today = hours_Emarge()
+    events_today = ensure_minimum_gap(hours_Emarge())
     events_filtered = filter_events(events_today)
 
     # Add a timedelta
     for event in events_filtered:
         if MODE == "EMARGEMENT":
             start_hour = (event["start"] + timedelta(minutes=random.randint(5, 10))).strftime("%H:%M")
-            schedule.every().day.at(start_hour).do(lambda event_name=event["name"]: emarge(event_name))
+            event_name = event["name"]
+            schedule.every().day.at(start_hour).do(emarge, event_name)
         elif MODE == "NOTIFICATION":
             start_hour = event["start"].strftime("%H:%M")
-            schedule.every().day.at(start_hour).do(lambda event_name=event["name"]: log_print(f"Il faut émarger pour {event_name}", "update"))
-
+            message = f'Il faut émarger pour {event["name"]}'
+            schedule.every().day.at(start_hour).do(log_print, message, "update")
         times.append(f"{start_hour}")
 
     if times:
@@ -333,7 +494,6 @@ def main():
         with open("ntfy", "w") as f:
             pass
 
-    print(f"Script d'émargement prêt !")
     schedule_random_times()
 
     # While loop to check every minute if it's the time to emarge
